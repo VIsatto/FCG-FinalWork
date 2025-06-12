@@ -8,10 +8,10 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "C:/Users/Vicente/Documents/Facul/FCG/TrabFinal/src/glad.c" "CMakeFiles/main.dir/src/glad.c.obj" "gcc" "CMakeFiles/main.dir/src/glad.c.obj.d"
-  "C:/Users/Vicente/Documents/Facul/FCG/TrabFinal/src/main.cpp" "CMakeFiles/main.dir/src/main.cpp.obj" "gcc" "CMakeFiles/main.dir/src/main.cpp.obj.d"
-  "C:/Users/Vicente/Documents/Facul/FCG/TrabFinal/src/textrendering.cpp" "CMakeFiles/main.dir/src/textrendering.cpp.obj" "gcc" "CMakeFiles/main.dir/src/textrendering.cpp.obj.d"
-  "C:/Users/Vicente/Documents/Facul/FCG/TrabFinal/src/tiny_obj_loader.cpp" "CMakeFiles/main.dir/src/tiny_obj_loader.cpp.obj" "gcc" "CMakeFiles/main.dir/src/tiny_obj_loader.cpp.obj.d"
+  "C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/src/glad.c" "CMakeFiles/main.dir/src/glad.c.obj" "gcc" "CMakeFiles/main.dir/src/glad.c.obj.d"
+  "C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/src/main.cpp" "CMakeFiles/main.dir/src/main.cpp.obj" "gcc" "CMakeFiles/main.dir/src/main.cpp.obj.d"
+  "C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/src/textrendering.cpp" "CMakeFiles/main.dir/src/textrendering.cpp.obj" "gcc" "CMakeFiles/main.dir/src/textrendering.cpp.obj.d"
+  "C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/src/tiny_obj_loader.cpp" "CMakeFiles/main.dir/src/tiny_obj_loader.cpp.obj" "gcc" "CMakeFiles/main.dir/src/tiny_obj_loader.cpp.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

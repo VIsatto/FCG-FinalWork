@@ -1,6 +1,6 @@
 CMakeFiles/main.dir/src/tiny_obj_loader.cpp.obj: \
- C:\Users\Vicente\Documents\Facul\FCG\TrabFinal\src\tiny_obj_loader.cpp \
- C:/Users/Vicente/Documents/Facul/FCG/TrabFinal/include/tiny_obj_loader.h \
+ C:\Users\Vicente\Documents\Facul\FCG\FCG-FinalWork\src\tiny_obj_loader.cpp \
+ C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/include/tiny_obj_loader.h \
  C:/msys64/ucrt64/include/c++/14.2.0/map \
  C:/msys64/ucrt64/include/c++/14.2.0/bits/requires_hosted.h \
  C:/msys64/ucrt64/include/c++/14.2.0/x86_64-w64-mingw32/bits/c++config.h \

@@ -1,5 +1,5 @@
 CMakeFiles/main.dir/src/glad.c.obj: \
- C:\Users\Vicente\Documents\Facul\FCG\TrabFinal\src\glad.c \
+ C:\Users\Vicente\Documents\Facul\FCG\FCG-FinalWork\src\glad.c \
  C:/msys64/ucrt64/include/stdio.h \
  C:/msys64/ucrt64/include/corecrt_stdio_config.h \
  C:/msys64/ucrt64/include/corecrt.h C:/msys64/ucrt64/include/_mingw.h \
@@ -20,7 +20,7 @@ CMakeFiles/main.dir/src/glad.c.obj: \
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/14.2.0/include/mm_malloc.h \
  C:/msys64/ucrt64/include/errno.h C:/msys64/ucrt64/include/string.h \
  C:/msys64/ucrt64/include/sec_api/string_s.h \
- C:/Users/Vicente/Documents/Facul/FCG/TrabFinal/include/glad/glad.h \
+ C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/include/glad/glad.h \
  C:/msys64/ucrt64/include/windows.h C:/msys64/ucrt64/include/sdkddkver.h \
  C:/msys64/ucrt64/include/excpt.h \
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/14.2.0/include/stdarg.h \
@@ -191,6 +191,6 @@ CMakeFiles/main.dir/src/glad.c.obj: \
  C:/msys64/ucrt64/include/sec_api/stralign_s.h \
  C:/msys64/ucrt64/include/winsvc.h C:/msys64/ucrt64/include/mcx.h \
  C:/msys64/ucrt64/include/imm.h \
- C:/Users/Vicente/Documents/Facul/FCG/TrabFinal/include/KHR/khrplatform.h \
+ C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/include/KHR/khrplatform.h \
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/14.2.0/include/stdint.h \
  C:/msys64/ucrt64/include/stdint.h C:/msys64/ucrt64/include/inttypes.h

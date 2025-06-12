@@ -56,10 +56,10 @@ RM = C:\cmake-4.0.1-windows-x86_64\bin\cmake.exe -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Users\Vicente\Documents\Facul\FCG\TrabFinal
+CMAKE_SOURCE_DIR = C:\Users\Vicente\Documents\Facul\FCG\FCG-FinalWork
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Users\Vicente\Documents\Facul\FCG\TrabFinal\build
+CMAKE_BINARY_DIR = C:\Users\Vicente\Documents\Facul\FCG\FCG-FinalWork\build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -86,9 +86,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\Vicente\Documents\Facul\FCG\TrabFinal\build\CMakeFiles C:\Users\Vicente\Documents\Facul\FCG\TrabFinal\build\\CMakeFiles\progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\Vicente\Documents\Facul\FCG\FCG-FinalWork\build\CMakeFiles C:\Users\Vicente\Documents\Facul\FCG\FCG-FinalWork\build\\CMakeFiles\progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\Vicente\Documents\Facul\FCG\TrabFinal\build\CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\Vicente\Documents\Facul\FCG\FCG-FinalWork\build\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
