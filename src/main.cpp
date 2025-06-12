@@ -148,6 +148,9 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+void animate_objects(glm::vec4* bunny_position, float speed, float delta_t);
+
+void animate_objects(glm::vec4* bunny_position, float speed, float delta_t);
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -189,9 +192,9 @@ bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mous
 // usuário através do mouse (veja função CursorPosCallback()). A posição
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
 // renderização.
-float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
-float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
-float g_CameraDistance = 5.0f; // Distância da câmera para a origem
+float g_CameraTheta = 3.0f; // Ângulo no plano ZX em relação ao eixo Z
+float g_CameraPhi = 0.5f;   // Ângulo em relação ao eixo Y
+float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
 // Variáveis que controlam rotação do antebraço
 float g_ForearmAngleZ = 0.0f;
@@ -213,6 +216,12 @@ GLint g_model_uniform;
 GLint g_view_uniform;
 GLint g_projection_uniform;
 GLint g_object_id_uniform;
+
+// Variaveis de tecla
+bool d_pressed = false;
+bool w_pressed = false;
+bool a_pressed = false;
+bool s_pressed = false;
 
 int main(int argc, char* argv[])
 {
@@ -332,7 +341,10 @@ int main(int argc, char* argv[])
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
-
+    
+    float speed = 5.0f;
+    float prev_time = (float)glfwGetTime();
+    glm::vec4 bunny_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -354,6 +366,12 @@ int main(int argc, char* argv[])
         // os shaders de vértice e fragmentos).
         glUseProgram(g_GpuProgramID);
 
+        float current_time = (float)glfwGetTime();
+        float delta_t = current_time - prev_time;
+        prev_time = current_time;
+
+        animate_objects(&bunny_position, speed, delta_t);
+
         // Computamos a posição da câmera utilizando coordenadas esféricas.  As
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
         // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
@@ -365,8 +383,8 @@ int main(int argc, char* argv[])
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c  = glm::vec4(x,y,z,1.0f); // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        glm::vec4 camera_position_c  = bunny_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
+        glm::vec4 camera_lookat_l    = bunny_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
@@ -426,7 +444,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_sphere");
 
         // Desenhamos o modelo do coelho
-        model = Matrix_Translate(1.0f,0.0f,0.0f)
+        model = Matrix_Translate(bunny_position.x, bunny_position.y, bunny_position.z)
               * Matrix_Rotate_Z(g_AngleZ)
               * Matrix_Rotate_Y(g_AngleY)
               * Matrix_Rotate_X(g_AngleX);
@@ -1180,6 +1198,84 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         fprintf(stdout,"Shaders recarregados!\n");
         fflush(stdout);
     }
+
+    // Se o usuário apertar a tecla D, atualizamos o estado da tecla D.
+    if (key == GLFW_KEY_D)
+    {
+        if (action == GLFW_PRESS)
+            // Usuário apertou a tecla D, então atualizamos o estado para pressionada
+            d_pressed = true;
+
+        else if (action == GLFW_RELEASE)
+            // Usuário largou a tecla D, então atualizamos o estado para NÃO pressionada
+            d_pressed = false;
+
+        else if (action == GLFW_REPEAT)
+            // Usuário está segurando a tecla D e o sistema operacional está
+            // disparando eventos de repetição. Neste caso, não precisamos
+            // atualizar o estado da tecla, pois antes de um evento REPEAT
+            // necessariamente deve ter ocorrido um evento PRESS.
+            ;
+    }
+
+    // ... Idem para as outras teclas W, A, S ...
+
+    // Se o usuário apertar a tecla W, atualizamos o estado da tecla W.
+    if (key == GLFW_KEY_W)
+    {
+        if (action == GLFW_PRESS)
+            // Usuário apertou a tecla W, então atualizamos o estado para pressionada
+            w_pressed = true;
+
+        else if (action == GLFW_RELEASE)
+            // Usuário largou a tecla W, então atualizamos o estado para NÃO pressionada
+            w_pressed = false;
+
+        else if (action == GLFW_REPEAT)
+            // Usuário está segurando a tecla W e o sistema operacional está
+            // disparando eventos de repetição. Neste caso, não precisamos
+            // atualizar o estado da tecla, pois antes de um evento REPEAT
+            // necessariamente deve ter ocorrido um evento PRESS.
+            ;
+    }
+
+    // Se o usuário apertar a tecla A, atualizamos o estado da tecla A.
+    if (key == GLFW_KEY_A)
+    {
+        if (action == GLFW_PRESS)
+            // Usuário apertou a tecla A, então atualizamos o estado para pressionada
+            a_pressed = true;
+
+        else if (action == GLFW_RELEASE)
+            // Usuário largou a tecla A, então atualizamos o estado para NÃO pressionada
+            a_pressed = false;
+
+        else if (action == GLFW_REPEAT)
+            // Usuário está segurando a tecla A e o sistema operacional está
+            // disparando eventos de repetição. Neste caso, não precisamos
+            // atualizar o estado da tecla, pois antes de um evento REPEAT
+            // necessariamente deve ter ocorrido um evento PRESS.
+            ;
+    }
+
+    // Se o usuário apertar a tecla S, atualizamos o estado da tecla S.
+    if (key == GLFW_KEY_S)
+    {
+        if (action == GLFW_PRESS)
+            // Usuário apertou a tecla S, então atualizamos o estado para pressionada
+            s_pressed = true;
+
+        else if (action == GLFW_RELEASE)
+            // Usuário largou a tecla S, então atualizamos o estado para NÃO pressionada
+            s_pressed = false;
+
+        else if (action == GLFW_REPEAT)
+            // Usuário está segurando a tecla S e o sistema operacional está
+            // disparando eventos de repetição. Neste caso, não precisamos
+            // atualizar o estado da tecla, pois antes de um evento REPEAT
+            // necessariamente deve ter ocorrido um evento PRESS.
+            ;
+    }
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
@@ -1483,6 +1579,26 @@ void PrintObjModelInfo(ObjModel* model)
     }
     printf("\n");
   }
+}
+
+void animate_objects(glm::vec4* object_position, float speed, float delta_t){
+
+    if (d_pressed)
+        // Se a tecla D estiver pressionada, movemos o objeto para a direita
+        object_position->x -= speed * delta_t;
+
+    if (a_pressed)
+        // Se a tecla A estiver pressionada, movemos o objeto para a esquerda
+        object_position->x += speed * delta_t;
+
+    if(w_pressed)
+        // Se a tecla W estiver pressionada, movemos o objeto para frente
+        object_position->z += speed * delta_t;
+
+    if (s_pressed)
+        // Se a tecla S estiver pressionada, movemos o objeto para trás
+        object_position->z -= speed * delta_t;
+    
 }
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
