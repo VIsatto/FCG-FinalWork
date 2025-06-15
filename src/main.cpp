@@ -141,8 +141,8 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
-void animateObject(glm::vec4* bunny_position, float speed, float delta_t);
-void checkWallsCollision(glm::vec4* bunny_position, float bunny_half_size = 1.0);
+void animateObject(glm::vec4* bunny_position, glm::vec4 view, float speed, float delta_t);
+void WallsCollision(glm::vec4* bunny_position, float bunny_half_size = 1.0);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -199,7 +199,7 @@ bool w_pressed = false;
 bool a_pressed = false;
 bool s_pressed = false;
 
-bool TestaColisaoAABB(const AABB& a, const AABB& b);
+bool ColisionAABB(const AABB& a, const AABB& b);
 
 int main(int argc, char* argv[])
 {
@@ -345,14 +345,6 @@ int main(int argc, char* argv[])
         // os shaders de vértice e fragmentos).
         glUseProgram(g_GpuProgramID);
 
-        float current_time = (float)glfwGetTime();
-        float delta_t = current_time - prev_time;
-        prev_time = current_time;
-
-        glm::vec4 bunny_position_anterior = bunny_position; // Salva posição antes de mover
-        animateObject(&bunny_position, speed, delta_t);
-        checkWallsCollision(&bunny_position);
-
         // Computamos a posição da câmera utilizando coordenadas esféricas.  As
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
         // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
@@ -368,6 +360,15 @@ int main(int argc, char* argv[])
         glm::vec4 camera_lookat_l    = bunny_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        
+        //Abaixo definimos delta t para função de animação do objeto
+        float current_time = (float)glfwGetTime();
+        float delta_t = current_time - prev_time;
+        prev_time = current_time;
+
+        glm::vec4 bunny_position_anterior = bunny_position; // Salva posição antes de mover        
+        animateObject(&bunny_position, camera_view_vector, speed, delta_t);
+        WallsCollision(&bunny_position);
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
@@ -411,7 +412,8 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_sphere");
 
         // Desenhamos o modelo do coelho
-        model = Matrix_Translate(bunny_position.x, bunny_position.y, bunny_position.z);
+        model = Matrix_Translate(bunny_position.x, bunny_position.y, bunny_position.z)
+              * Matrix_Rotate_Y(g_CameraTheta-3.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
         DrawVirtualObject("the_bunny");
@@ -478,7 +480,7 @@ int main(int argc, char* argv[])
         sphere_aabb.max = glm::vec3(-3.0f + 1.0f, 0.0f + 1.0f, 0.0f + 1.0f);
 
         // Verifica colisão entre a hit box do coelho e a hit box da esfera
-        if (TestaColisaoAABB(bunny_aabb, sphere_aabb))
+        if (ColisionAABB(bunny_aabb, sphere_aabb))
         {
             bunny_position = bunny_position_anterior;
         }
@@ -571,26 +573,6 @@ void LoadShadersFromFiles()
     g_view_uniform       = glGetUniformLocation(g_GpuProgramID, "view"); // Variável da matriz "view" em shader_vertex.glsl
     g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection"); // Variável da matriz "projection" em shader_vertex.glsl
     g_object_id_uniform  = glGetUniformLocation(g_GpuProgramID, "object_id"); // Variável "object_id" em shader_fragment.glsl
-}
-
-// Função que pega a matriz M e guarda a mesma no topo da pilha
-void PushMatrix(glm::mat4 M)
-{
-    g_MatrixStack.push(M);
-}
-
-// Função que remove a matriz atualmente no topo da pilha e armazena a mesma na variável M
-void PopMatrix(glm::mat4& M)
-{
-    if ( g_MatrixStack.empty() )
-    {
-        M = Matrix_Identity();
-    }
-    else
-    {
-        M = g_MatrixStack.top();
-        g_MatrixStack.pop();
-    }
 }
 
 // Função que computa as normais de um ObjModel, caso elas não tenham sido
@@ -1311,37 +1293,43 @@ void PrintObjModelInfo(ObjModel* model)
   }
 }
 
-void animateObject(glm::vec4* object_position, float speed, float delta_t){
+void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t){
+
+    view = glm::vec4(view.x,0.0f,view.z,0.0);
+    view = view/ norm(view);
+
+    glm::vec4 left_dir = crossproduct(view, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+    left_dir = left_dir/norm(left_dir);
 
     if (d_pressed)
         // Se a tecla D estiver pressionada, movemos o objeto para a direita
-        object_position->x -= speed * delta_t;
+        *object_position += left_dir * speed * delta_t;
 
     if (a_pressed)
         // Se a tecla A estiver pressionada, movemos o objeto para a esquerda
-        object_position->x += speed * delta_t;
+        *object_position -= left_dir * speed * delta_t;
 
     if(w_pressed)
         // Se a tecla W estiver pressionada, movemos o objeto para frente
-        object_position->z += speed * delta_t;
+        *object_position += view * speed * delta_t;
 
     if (s_pressed)
         // Se a tecla S estiver pressionada, movemos o objeto para trás
-        object_position->z -= speed * delta_t;
+        *object_position -= view * speed * delta_t;
     
 }
 
-bool TestaColisaoAABB(const AABB& a, const AABB& b) {
+bool ColisionAABB(const AABB& a, const AABB& b) {
     // Verifica se há sobreposição em cada eixo
-    bool sobrepoe_x = (a.min.x <= b.max.x && a.max.x >= b.min.x);
-    bool sobrepoe_y = (a.min.y <= b.max.y && a.max.y >= b.min.y);
-    bool sobrepoe_z = (a.min.z <= b.max.z && a.max.z >= b.min.z);
+    bool over_X = (a.min.x <= b.max.x && a.max.x >= b.min.x);
+    bool over_Y = (a.min.y <= b.max.y && a.max.y >= b.min.y);
+    bool over_Z = (a.min.z <= b.max.z && a.max.z >= b.min.z);
 
     // Se houver sobreposição em TODOS os eixos, há colisão
-    return sobrepoe_x && sobrepoe_y && sobrepoe_z;
+    return over_X && over_Y && over_Z;
 }
 
-void checkWallsCollision(glm::vec4* bunny_position, float bunny_half_size){
+void WallsCollision(glm::vec4* bunny_position, float bunny_half_size){
     // Limites do ambiente (ajuste conforme necessário)
     float min_x = -20.0f + bunny_half_size;
     float max_x =  20.0f - bunny_half_size;
@@ -1357,4 +1345,3 @@ void checkWallsCollision(glm::vec4* bunny_position, float bunny_half_size){
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
-
