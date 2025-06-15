@@ -20,6 +20,9 @@ uniform mat4 projection;
 #define WEST_WALL  4
 #define NORTH_WALL 5
 #define SOUTH_WALL 6
+#define HIT_SPHERE 7
+#define HIT_BOX 8
+
 uniform int object_id;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
@@ -59,6 +62,15 @@ void main()
     float q; // Expoente especular para o modelo de iluminação de Phong
 
     if ( object_id == SPHERE )
+    {
+        // PREENCHA AQUI
+        // Propriedades espectrais da esfera
+        Kd = vec3(0.8, 0.4, 0.08);
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = 0.5 * Kd;
+        q = 1.0;
+    }
+    else if ( object_id == HIT_BOX )
     {
         // PREENCHA AQUI
         // Propriedades espectrais da esfera
@@ -170,7 +182,7 @@ void main()
     //    suas distâncias para a câmera (desenhando primeiro objetos
     //    transparentes que estão mais longe da câmera).
     // Alpha default = 1 = 100% opaco = 0% transparente
-    color.a = 1;
+    color.a = 0.4;
 
     // Cor final do fragmento calculada com uma combinação dos termos difuso,
     // especular, e ambiente. Veja slide 129 do documento Aula_17_e_18_Modelos_de_Iluminacao.pdf.
