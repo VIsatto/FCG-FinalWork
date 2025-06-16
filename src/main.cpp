@@ -147,6 +147,11 @@ void WallsCollision(glm::vec4* sonic_position, float bunny_half_size = 1.0);
 bool ColisionAABB(const AABB& a, const AABB& b);
 
 void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
+void animateObject(glm::vec4* sonic_position, glm::vec4 view, float speed, float delta_t);
+void WallsCollision(glm::vec4* sonic_position, float bunny_half_size = 1.0);
+bool ColisionAABB(const AABB& a, const AABB& b);
+
+void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -204,6 +209,8 @@ bool a_pressed = false;
 bool s_pressed = false;
 bool shift_pressed = false; 
 
+// Número de texturas carregadas pela função LoadTextureImage()
+GLuint g_NumLoadedTextures = 0;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 
@@ -283,6 +290,9 @@ int main(int argc, char* argv[])
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/monster_texture.png"); // TextureImage0
 
+    // Carregamos duas imagens para serem utilizadas como textura
+    LoadTextureImage("../../data/monster_texture.png"); // TextureImage0
+
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
     ComputeNormals(&spheremodel);
@@ -328,6 +338,18 @@ int main(int argc, char* argv[])
     ComputeNormals(&robotnikmodel);
     BuildTrianglesAndAddToVirtualScene(&robotnikmodel);
 
+    ObjModel monstermdoel("../../data/monster.obj");
+    ComputeNormals(&monstermdoel);
+    BuildTrianglesAndAddToVirtualScene(&monstermdoel);
+
+    ObjModel sonicmodel("../../data/sonic.obj");
+    ComputeNormals(&sonicmodel);
+    BuildTrianglesAndAddToVirtualScene(&sonicmodel);
+
+    ObjModel robotnikmodel("../../data/robotnik.obj");
+    ComputeNormals(&robotnikmodel);
+    BuildTrianglesAndAddToVirtualScene(&robotnikmodel);
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -344,6 +366,7 @@ int main(int argc, char* argv[])
     
     float speed = 10.0f;
     float prev_time = (float)glfwGetTime();
+    glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -377,6 +400,8 @@ int main(int argc, char* argv[])
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
+        glm::vec4 camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
+        glm::vec4 camera_lookat_l    = sonic_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
         glm::vec4 camera_lookat_l    = sonic_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
@@ -431,12 +456,32 @@ int main(int argc, char* argv[])
         #define SONIC 10
         #define ROBOTNIK 11
 
+        #define MONSTER 9
+        #define SONIC 10
+        #define ROBOTNIK 11
+
 
         // Desenhamos o modelo da esfera
         model = Matrix_Translate(-3.0f,-1.0f,0.0f)
               * Matrix_Rotate_X(-1.57079632679489661923)
               * Matrix_Scale(0.02f,0.02f,0.02f);
+        model = Matrix_Translate(-3.0f,-1.0f,0.0f)
+              * Matrix_Rotate_X(-1.57079632679489661923)
+              * Matrix_Scale(0.02f,0.02f,0.02f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, ROBOTNIK);
+        DrawVirtualObject("ButtonLow3");
+        DrawVirtualObject("TeethTop");
+        DrawVirtualObject("HeadLow");
+        DrawVirtualObject("Mustache");
+        DrawVirtualObject("TeethBottom");
+        DrawVirtualObject("ButtonLow");
+        DrawVirtualObject("PantsLow");
+        DrawVirtualObject("ShirtLow");
+        DrawVirtualObject("GlassesLow3");
+        DrawVirtualObject("Hands");
+        DrawVirtualObject("ButtonLow1");
+        DrawVirtualObject("ButtonLow2");
         glUniform1i(g_object_id_uniform, ROBOTNIK);
         DrawVirtualObject("ButtonLow3");
         DrawVirtualObject("TeethTop");
@@ -456,7 +501,13 @@ int main(int argc, char* argv[])
               * Matrix_Rotate_Y(g_CameraTheta-3.0f)
               * Matrix_Rotate_X(-1.57079632679489661923)
               * Matrix_Scale(0.2f,0.2f,0.2f);
+        model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
+              * Matrix_Rotate_Y(g_CameraTheta-3.0f)
+              * Matrix_Rotate_X(-1.57079632679489661923)
+              * Matrix_Scale(0.2f,0.2f,0.2f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, SONIC);
+        DrawVirtualObject("Sonic:CHR_NML_SNC1");
         glUniform1i(g_object_id_uniform, SONIC);
         DrawVirtualObject("Sonic:CHR_NML_SNC1");
 
@@ -503,6 +554,7 @@ int main(int argc, char* argv[])
 
         // // Desenhamos o modelo da hit box do coelho
         // model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z);
+        // model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z);
         // glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         // glUniform1i(g_object_id_uniform, HIT_BOX);
         // DrawVirtualObject("the_cube");
@@ -516,6 +568,8 @@ int main(int argc, char* argv[])
         AABB bunny_aabb;
         bunny_aabb.min = glm::vec3(sonic_position.x - 1.0f, sonic_position.y - 1.0f, sonic_position.z - 1.0f);
         bunny_aabb.max = glm::vec3(sonic_position.x + 1.0f, sonic_position.y + 1.0f, sonic_position.z + 1.0f);
+        bunny_aabb.min = glm::vec3(sonic_position.x - 1.0f, sonic_position.y - 1.0f, sonic_position.z - 1.0f);
+        bunny_aabb.max = glm::vec3(sonic_position.x + 1.0f, sonic_position.y + 1.0f, sonic_position.z + 1.0f);
 
         AABB sphere_aabb;
         sphere_aabb.min = glm::vec3(-3.0f - 1.0f, 0.0f - 1.0f, 0.0f - 1.0f);
@@ -524,6 +578,7 @@ int main(int argc, char* argv[])
         // Verifica colisão entre a hit box do coelho e a hit box da esfera
         if (ColisionAABB(bunny_aabb, sphere_aabb))
         {
+            sonic_position = sonic_position_anterior;
             sonic_position = sonic_position_anterior;
         }
 
@@ -1408,6 +1463,58 @@ void LoadTextureImage(const char* filename)
     g_NumLoadedTextures += 1;
 }
 
+// Função que carrega uma imagem para ser utilizada como textura
+void LoadTextureImage(const char* filename)
+{
+    printf("Carregando imagem \"%s\"... ", filename);
+
+    // Primeiro fazemos a leitura da imagem do disco
+    stbi_set_flip_vertically_on_load(true);
+    int width;
+    int height;
+    int channels;
+    unsigned char *data = stbi_load(filename, &width, &height, &channels, 3);
+
+    if ( data == NULL )
+    {
+        fprintf(stderr, "ERROR: Cannot open image file \"%s\".\n", filename);
+        std::exit(EXIT_FAILURE);
+    }
+
+    printf("OK (%dx%d).\n", width, height);
+
+    // Agora criamos objetos na GPU com OpenGL para armazenar a textura
+    GLuint texture_id;
+    GLuint sampler_id;
+    glGenTextures(1, &texture_id);
+    glGenSamplers(1, &sampler_id);
+
+    // Veja slides 95-96 do documento Aula_20_Mapeamento_de_Texturas.pdf
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Parâmetros de amostragem da textura.
+    glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Agora enviamos a imagem lida do disco para a GPU
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+
+    GLuint textureunit = g_NumLoadedTextures;
+    glActiveTexture(GL_TEXTURE0 + textureunit);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindSampler(textureunit, sampler_id);
+
+    stbi_image_free(data);
+
+    g_NumLoadedTextures += 1;
+}
+
 void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t){
 
     view = glm::vec4(view.x,0.0f,view.z,0.0);
@@ -1452,6 +1559,7 @@ bool ColisionAABB(const AABB& a, const AABB& b) {
 }
 
 void WallsCollision(glm::vec4* sonic_position, float bunny_half_size){
+void WallsCollision(glm::vec4* sonic_position, float bunny_half_size){
     // Limites do ambiente (ajuste conforme necessário)
     float min_x = -20.0f + bunny_half_size;
     float max_x =  20.0f - bunny_half_size;
@@ -1459,6 +1567,10 @@ void WallsCollision(glm::vec4* sonic_position, float bunny_half_size){
     float max_z =  20.0f - bunny_half_size;
 
     // Checa e corrige colisão com as paredes
+    if (sonic_position->x < min_x) sonic_position->x = min_x;
+    if (sonic_position->x > max_x) sonic_position->x = max_x;
+    if (sonic_position->z < min_z) sonic_position->z = min_z;
+    if (sonic_position->z > max_z) sonic_position->z = max_z;
     if (sonic_position->x < min_x) sonic_position->x = min_x;
     if (sonic_position->x > max_x) sonic_position->x = max_x;
     if (sonic_position->z < min_z) sonic_position->z = min_z;
