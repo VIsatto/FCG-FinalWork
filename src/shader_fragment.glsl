@@ -7,6 +7,12 @@
 in vec4 position_world;
 in vec4 normal;
 
+// Posição do vértice atual no sistema de coordenadas local do modelo.
+in vec4 position_model;
+
+// Coordenadas de textura obtidas do arquivo OBJ (se existirem!)
+in vec2 texcoords;
+
 // Matrizes computadas no código C++ e enviadas para a GPU
 uniform mat4 model;
 uniform mat4 view;
@@ -18,15 +24,29 @@ uniform mat4 projection;
 #define FLOOR  2
 #define EAST_WALL  3
 #define WEST_WALL  4
-#define NORTH_WALL 5
-#define SOUTH_WALL 6
+#define NORTH_WALL  5
+#define SOUTH_WALL  6
 #define HIT_SPHERE 7
 #define HIT_BOX 8
+#define MONSTER 9
+#define SONIC 10
+#define ROBOTNIK 11
 
 uniform int object_id;
 
+// Parâmetros da axis-aligned bounding box (AABB) do modelo
+uniform vec4 bbox_min;
+uniform vec4 bbox_max;
+
+// Variáveis para acesso das imagens de textura
+uniform sampler2D TextureImage0;
+
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
+
+// Constantes
+#define M_PI   3.14159265358979323846
+#define M_PI_2 1.57079632679489661923
 
 void main()
 {
@@ -60,12 +80,23 @@ void main()
     vec3 Ks; // Refletância especular
     vec3 Ka; // Refletância ambiente
     float q; // Expoente especular para o modelo de iluminação de Phong
+    
+    // Coordenadas de textura U e V
+    float U = 0.0;
+    float V = 0.0;
 
-    if ( object_id == SPHERE )
+    if ( object_id == ROBOTNIK )
     {
-        // PREENCHA AQUI
-        // Propriedades espectrais da esfera
-        Kd = vec3(0.8, 0.4, 0.08);
+        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
+
+        vec4 r = position_model - bbox_center;
+        float theta = atan(position_model.x, position_model.z);
+        float phi = asin(position_model.y/length(r));
+
+        U = (theta + M_PI)/ (2.0f*M_PI);
+        V = (phi + M_PI/2)/ M_PI;
+
+        Kd = texture(TextureImage0, vec2(U,V)).rgb;
         Ks = vec3(0.0,0.0,0.0);
         Ka = 0.5 * Kd;
         q = 1.0;
@@ -78,8 +109,10 @@ void main()
         Ks = vec3(0.0,0.0,0.0);
         Ka = 0.5 * Kd;
         q = 1.0;
+
+
     }
-    else if ( object_id == BUNNY )
+    else if ( object_id == SONIC )
     {
         // PREENCHA AQUI
         // Propriedades espectrais do coelho
