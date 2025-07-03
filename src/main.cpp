@@ -198,6 +198,7 @@ bool d_pressed = false;
 bool w_pressed = false;
 bool a_pressed = false;
 bool s_pressed = false;
+bool shift_pressed = false; 
 
 bool ColisionAABB(const AABB& a, const AABB& b);
 
@@ -1116,6 +1117,20 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
             // Usuário largou a tecla S, então atualizamos o estado para NÃO pressionada
             s_pressed = false;
     }
+    if (key == GLFW_KEY_LEFT_SHIFT)
+    {
+        if (action == GLFW_PRESS)
+            // Usuário apertou a tecla SHIFT, então atualizamos o estado para pressionada
+            shift_pressed = true;
+
+        else if (action == GLFW_RELEASE)
+            // Usuário largou a tecla SHIFT, então atualizamos o estado para NÃO pressionada
+            shift_pressed = false;
+    }
+    {
+        /* code */
+    }
+    
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
@@ -1301,23 +1316,30 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     glm::vec4 left_dir = crossproduct(view, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
     left_dir = left_dir/norm(left_dir);
 
+    float current_speed = speed;
+
+    if (shift_pressed){
+        // Se a tecla SHIFT estiver pressionada, aumentamos a velocidade
+        current_speed = speed * 2.5f;
+    }
+        
     if (d_pressed)
         // Se a tecla D estiver pressionada, movemos o objeto para a direita
-        *object_position += left_dir * speed * delta_t;
+        *object_position += left_dir * current_speed * delta_t;
 
     if (a_pressed)
         // Se a tecla A estiver pressionada, movemos o objeto para a esquerda
-        *object_position -= left_dir * speed * delta_t;
+        *object_position -= left_dir * current_speed * delta_t;
 
     if(w_pressed)
         // Se a tecla W estiver pressionada, movemos o objeto para frente
-        *object_position += view * speed * delta_t;
+        *object_position += view * current_speed * delta_t;
 
     if (s_pressed)
         // Se a tecla S estiver pressionada, movemos o objeto para trás
-        *object_position -= view * speed * delta_t;
+        *object_position -= view * current_speed * delta_t;
     
-}
+    }
 
 bool ColisionAABB(const AABB& a, const AABB& b) {
     // Verifica se há sobreposição em cada eixo
