@@ -518,5 +518,6 @@ CMakeFiles/main.dir/src/main.cpp.obj: \
  C:/msys64/ucrt64/include/c++/14.2.0/cstring \
  C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/include/glm/gtc/type_ptr.inl \
  C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/include/tiny_obj_loader.h \
+ C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/include/stb_image.h \
  C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/include/utils.h \
  C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/include/matrices.h
