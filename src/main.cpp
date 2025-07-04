@@ -210,8 +210,7 @@ bool space_pressed = false;
 
 bool ColisionAABB(const AABB& a, const AABB& b);
 
-glm::vec4 projectile_position;
-glm::vec4 projectile_direction;
+
 bool projectile_fired = false;
 
 int main(int argc, char* argv[])
@@ -341,6 +340,8 @@ int main(int argc, char* argv[])
     float speed = 10.0f;
     float prev_time = (float)glfwGetTime();
     glm::vec4 bunny_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec4 projectile_position;
+    glm::vec4 projectile_direction;
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
