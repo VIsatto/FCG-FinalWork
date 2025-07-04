@@ -22,8 +22,12 @@ uniform mat4 projection;
 #define SOUTH_WALL 6
 #define HIT_SPHERE 7
 #define HIT_BOX 8
+#define PROJECTILE 9
 
 uniform int object_id;
+
+// Variáveis para acesso das imagens de textura
+uniform sampler2D TextureImage0;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -107,7 +111,6 @@ void main()
         Kd = vec3(0.2, 0.2, 0.2);
         Ks = vec3(0.3, 0.3, 0.3);
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
     }
@@ -119,7 +122,7 @@ void main()
         Kd = vec3(0.2, 0.2, 0.2);
         Ks = vec3(0.3, 0.3, 0.3);
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
+       
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
     }
@@ -131,7 +134,6 @@ void main()
         Kd = vec3(0.2, 0.2, 0.2);
         Ks = vec3(0.3, 0.3, 0.3);
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
     }
@@ -143,9 +145,17 @@ void main()
         Kd = vec3(0.2, 0.2, 0.2);
         Ks = vec3(0.3, 0.3, 0.3);
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
+    }
+
+    else if(object_id == PROJECTILE){
+        Kd = vec3(0.2, 0.2, 0.2);
+        Ks = vec3(0.3, 0.3, 0.3);
+
+        Ka = vec3(0.6,0.6,0.6);
+        q = 20.0;
+
     }
     else // Objeto desconhecido = preto
     {
