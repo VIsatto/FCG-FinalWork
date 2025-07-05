@@ -1,3 +1,0 @@
-C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/build/CMakeFiles/main.dir
-C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/build/CMakeFiles/edit_cache.dir
-C:/Users/Vicente/Documents/Facul/FCG/FCG-FinalWork/build/CMakeFiles/rebuild_cache.dir
