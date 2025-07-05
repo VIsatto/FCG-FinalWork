@@ -523,9 +523,16 @@ int main(int argc, char* argv[])
 
         AABB projec_aabb;
          if(space_pressed && !projectile_fired && current_time - shoot_timer >= 0.8f ) {
-            // Inicia o disparo
-            projectile_position = bunny_position + glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f);
-            projectile_direction = glm::normalize(camera_view_vector);
+            // Calcula a direção normalizada do coelho (para onde ele está olhando)
+            glm::vec4 bunny_forward = glm::normalize(camera_view_vector);
+
+            // Define a posição inicial do projétil um pouco à frente do coelho
+            float offset = 1.0f; // ajuste conforme necessário
+            projectile_position = bunny_position + bunny_forward * offset;
+
+            // Define a direção do projétil igual à direção do coelho
+            projectile_direction = bunny_forward;
+
             projectile_fired = true;
             shoot_timer = current_time;
             printf("Disparando projétil!\n");
