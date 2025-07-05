@@ -145,8 +145,10 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
+void LoadTextureImage(const char* filename);
 void animateObject(glm::vec4* bunny_position, glm::vec4 view, float speed, float delta_t);
 void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t);
+bool ColisionAABB(const AABB& a, const AABB& b);
 bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
 bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<AABB> obj_aabbs);
 void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_timer, float current_time, bool &projectile_fired, std::vector<AABB> out_aabbs, float proj_rotation);
@@ -211,9 +213,6 @@ bool s_pressed = false;
 bool shift_pressed = false; 
 bool space_pressed = false;
 
-// Número de texturas carregadas pela função LoadTextureImage()
-GLuint g_NumLoadedTextures = 0;
-// Número de texturas carregadas pela função LoadTextureImage()
 
 
 bool projectile_fired = false;
@@ -598,7 +597,6 @@ int main(int argc, char* argv[])
 
             projectile_fired = true;
             shoot_timer = current_time;
-            printf("Disparando projétil!\n");
         }
 
         
