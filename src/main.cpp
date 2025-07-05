@@ -1559,7 +1559,6 @@ bool ColisionAABB(const AABB& a, const AABB& b) {
 }
 
 void WallsCollision(glm::vec4* sonic_position, float bunny_half_size){
-void WallsCollision(glm::vec4* sonic_position, float bunny_half_size){
     // Limites do ambiente (ajuste conforme necessário)
     float min_x = -20.0f + bunny_half_size;
     float max_x =  20.0f - bunny_half_size;
