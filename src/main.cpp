@@ -41,6 +41,7 @@
 
 // Headers da biblioteca para carregar modelos obj
 #include <tiny_obj_loader.h>
+#include <stb_image.h>
 
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
@@ -141,8 +142,11 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
-void animateObject(glm::vec4* bunny_position, glm::vec4 view, float speed, float delta_t);
-void WallsCollision(glm::vec4* bunny_position, float bunny_half_size = 1.0);
+void animateObject(glm::vec4* sonic_position, glm::vec4 view, float speed, float delta_t);
+void WallsCollision(glm::vec4* sonic_position, float bunny_half_size = 1.0);
+bool ColisionAABB(const AABB& a, const AABB& b);
+
+void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -198,8 +202,10 @@ bool d_pressed = false;
 bool w_pressed = false;
 bool a_pressed = false;
 bool s_pressed = false;
+bool shift_pressed = false; 
 
-bool ColisionAABB(const AABB& a, const AABB& b);
+// Número de texturas carregadas pela função LoadTextureImage()
+GLuint g_NumLoadedTextures = 0;
 
 int main(int argc, char* argv[])
 {
@@ -274,6 +280,9 @@ int main(int argc, char* argv[])
     //
     LoadShadersFromFiles();
 
+    // Carregamos duas imagens para serem utilizadas como textura
+    LoadTextureImage("../../data/monster_texture.png"); // TextureImage0
+
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
     ComputeNormals(&spheremodel);
@@ -307,6 +316,18 @@ int main(int argc, char* argv[])
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
 
+    ObjModel monstermdoel("../../data/monster.obj");
+    ComputeNormals(&monstermdoel);
+    BuildTrianglesAndAddToVirtualScene(&monstermdoel);
+
+    ObjModel sonicmodel("../../data/sonic.obj");
+    ComputeNormals(&sonicmodel);
+    BuildTrianglesAndAddToVirtualScene(&sonicmodel);
+
+    ObjModel robotnikmodel("../../data/robotnik.obj");
+    ComputeNormals(&robotnikmodel);
+    BuildTrianglesAndAddToVirtualScene(&robotnikmodel);
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -323,7 +344,7 @@ int main(int argc, char* argv[])
     
     float speed = 10.0f;
     float prev_time = (float)glfwGetTime();
-    glm::vec4 bunny_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -356,8 +377,8 @@ int main(int argc, char* argv[])
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c  = bunny_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l    = bunny_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        glm::vec4 camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
+        glm::vec4 camera_lookat_l    = sonic_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
         
@@ -366,9 +387,11 @@ int main(int argc, char* argv[])
         float delta_t = current_time - prev_time;
         prev_time = current_time;
 
-        glm::vec4 bunny_position_anterior = bunny_position; // Salva posição antes de mover        
-        animateObject(&bunny_position, camera_view_vector, speed, delta_t);
-        WallsCollision(&bunny_position);
+        glm::vec4 sonic_position_anterior = sonic_position; // Salva posição antes de mover        
+        animateObject(&sonic_position, camera_view_vector, speed, delta_t);
+        WallsCollision(&sonic_position);
+
+        camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); 
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
@@ -404,19 +427,38 @@ int main(int argc, char* argv[])
         #define SOUTH_WALL  6
         #define HIT_SPHERE 7
         #define HIT_BOX 8
+        #define MONSTER 9
+        #define SONIC 10
+        #define ROBOTNIK 11
+
 
         // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-3.0f,0.0f,0.0f);
+        model = Matrix_Translate(-3.0f,-1.0f,0.0f)
+              * Matrix_Rotate_X(-1.57079632679489661923)
+              * Matrix_Scale(0.02f,0.02f,0.02f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");
+        glUniform1i(g_object_id_uniform, ROBOTNIK);
+        DrawVirtualObject("ButtonLow3");
+        DrawVirtualObject("TeethTop");
+        DrawVirtualObject("HeadLow");
+        DrawVirtualObject("Mustache");
+        DrawVirtualObject("TeethBottom");
+        DrawVirtualObject("ButtonLow");
+        DrawVirtualObject("PantsLow");
+        DrawVirtualObject("ShirtLow");
+        DrawVirtualObject("GlassesLow3");
+        DrawVirtualObject("Hands");
+        DrawVirtualObject("ButtonLow1");
+        DrawVirtualObject("ButtonLow2");
 
         // Desenhamos o modelo do coelho
-        model = Matrix_Translate(bunny_position.x, bunny_position.y, bunny_position.z)
-              * Matrix_Rotate_Y(g_CameraTheta-3.0f);
+        model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
+              * Matrix_Rotate_Y(g_CameraTheta-3.0f)
+              * Matrix_Rotate_X(-1.57079632679489661923)
+              * Matrix_Scale(0.2f,0.2f,0.2f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("the_bunny");
+        glUniform1i(g_object_id_uniform, SONIC);
+        DrawVirtualObject("Sonic:CHR_NML_SNC1");
 
         //desenhamos chão e paredes
         model = Matrix_Translate(0.0f,-1.0f,0.0f)
@@ -460,7 +502,7 @@ int main(int argc, char* argv[])
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // // Desenhamos o modelo da hit box do coelho
-        // model = Matrix_Translate(bunny_position.x, bunny_position.y, bunny_position.z);
+        // model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z);
         // glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         // glUniform1i(g_object_id_uniform, HIT_BOX);
         // DrawVirtualObject("the_cube");
@@ -472,8 +514,8 @@ int main(int argc, char* argv[])
         // DrawVirtualObject("the_cube");
 
         AABB bunny_aabb;
-        bunny_aabb.min = glm::vec3(bunny_position.x - 1.0f, bunny_position.y - 1.0f, bunny_position.z - 1.0f);
-        bunny_aabb.max = glm::vec3(bunny_position.x + 1.0f, bunny_position.y + 1.0f, bunny_position.z + 1.0f);
+        bunny_aabb.min = glm::vec3(sonic_position.x - 1.0f, sonic_position.y - 1.0f, sonic_position.z - 1.0f);
+        bunny_aabb.max = glm::vec3(sonic_position.x + 1.0f, sonic_position.y + 1.0f, sonic_position.z + 1.0f);
 
         AABB sphere_aabb;
         sphere_aabb.min = glm::vec3(-3.0f - 1.0f, 0.0f - 1.0f, 0.0f - 1.0f);
@@ -482,7 +524,7 @@ int main(int argc, char* argv[])
         // Verifica colisão entre a hit box do coelho e a hit box da esfera
         if (ColisionAABB(bunny_aabb, sphere_aabb))
         {
-            bunny_position = bunny_position_anterior;
+            sonic_position = sonic_position_anterior;
         }
 
         // O framebuffer onde OpenGL executa as operações de renderização não
@@ -573,6 +615,13 @@ void LoadShadersFromFiles()
     g_view_uniform       = glGetUniformLocation(g_GpuProgramID, "view"); // Variável da matriz "view" em shader_vertex.glsl
     g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection"); // Variável da matriz "projection" em shader_vertex.glsl
     g_object_id_uniform  = glGetUniformLocation(g_GpuProgramID, "object_id"); // Variável "object_id" em shader_fragment.glsl
+
+    // Variáveis em "shader_fragment.glsl" para acesso das imagens de textura
+    glUseProgram(g_GpuProgramID);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUseProgram(0);
 }
 
 // Função que computa as normais de um ObjModel, caso elas não tenham sido
@@ -1116,6 +1165,20 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
             // Usuário largou a tecla S, então atualizamos o estado para NÃO pressionada
             s_pressed = false;
     }
+    if (key == GLFW_KEY_LEFT_SHIFT)
+    {
+        if (action == GLFW_PRESS)
+            // Usuário apertou a tecla SHIFT, então atualizamos o estado para pressionada
+            shift_pressed = true;
+
+        else if (action == GLFW_RELEASE)
+            // Usuário largou a tecla SHIFT, então atualizamos o estado para NÃO pressionada
+            shift_pressed = false;
+    }
+    {
+        /* code */
+    }
+    
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
@@ -1293,6 +1356,58 @@ void PrintObjModelInfo(ObjModel* model)
   }
 }
 
+// Função que carrega uma imagem para ser utilizada como textura
+void LoadTextureImage(const char* filename)
+{
+    printf("Carregando imagem \"%s\"... ", filename);
+
+    // Primeiro fazemos a leitura da imagem do disco
+    stbi_set_flip_vertically_on_load(true);
+    int width;
+    int height;
+    int channels;
+    unsigned char *data = stbi_load(filename, &width, &height, &channels, 3);
+
+    if ( data == NULL )
+    {
+        fprintf(stderr, "ERROR: Cannot open image file \"%s\".\n", filename);
+        std::exit(EXIT_FAILURE);
+    }
+
+    printf("OK (%dx%d).\n", width, height);
+
+    // Agora criamos objetos na GPU com OpenGL para armazenar a textura
+    GLuint texture_id;
+    GLuint sampler_id;
+    glGenTextures(1, &texture_id);
+    glGenSamplers(1, &sampler_id);
+
+    // Veja slides 95-96 do documento Aula_20_Mapeamento_de_Texturas.pdf
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Parâmetros de amostragem da textura.
+    glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Agora enviamos a imagem lida do disco para a GPU
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+
+    GLuint textureunit = g_NumLoadedTextures;
+    glActiveTexture(GL_TEXTURE0 + textureunit);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindSampler(textureunit, sampler_id);
+
+    stbi_image_free(data);
+
+    g_NumLoadedTextures += 1;
+}
+
 void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t){
 
     view = glm::vec4(view.x,0.0f,view.z,0.0);
@@ -1301,23 +1416,30 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     glm::vec4 left_dir = crossproduct(view, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
     left_dir = left_dir/norm(left_dir);
 
+    float current_speed = speed;
+
+    if (shift_pressed){
+        // Se a tecla SHIFT estiver pressionada, aumentamos a velocidade
+        current_speed = speed * 2.5f;
+    }
+        
     if (d_pressed)
         // Se a tecla D estiver pressionada, movemos o objeto para a direita
-        *object_position += left_dir * speed * delta_t;
+        *object_position += left_dir * current_speed * delta_t;
 
     if (a_pressed)
         // Se a tecla A estiver pressionada, movemos o objeto para a esquerda
-        *object_position -= left_dir * speed * delta_t;
+        *object_position -= left_dir * current_speed * delta_t;
 
     if(w_pressed)
         // Se a tecla W estiver pressionada, movemos o objeto para frente
-        *object_position += view * speed * delta_t;
+        *object_position += view * current_speed * delta_t;
 
     if (s_pressed)
         // Se a tecla S estiver pressionada, movemos o objeto para trás
-        *object_position -= view * speed * delta_t;
+        *object_position -= view * current_speed * delta_t;
     
-}
+    }
 
 bool ColisionAABB(const AABB& a, const AABB& b) {
     // Verifica se há sobreposição em cada eixo
@@ -1329,7 +1451,7 @@ bool ColisionAABB(const AABB& a, const AABB& b) {
     return over_X && over_Y && over_Z;
 }
 
-void WallsCollision(glm::vec4* bunny_position, float bunny_half_size){
+void WallsCollision(glm::vec4* sonic_position, float bunny_half_size){
     // Limites do ambiente (ajuste conforme necessário)
     float min_x = -20.0f + bunny_half_size;
     float max_x =  20.0f - bunny_half_size;
@@ -1337,10 +1459,10 @@ void WallsCollision(glm::vec4* bunny_position, float bunny_half_size){
     float max_z =  20.0f - bunny_half_size;
 
     // Checa e corrige colisão com as paredes
-    if (bunny_position->x < min_x) bunny_position->x = min_x;
-    if (bunny_position->x > max_x) bunny_position->x = max_x;
-    if (bunny_position->z < min_z) bunny_position->z = min_z;
-    if (bunny_position->z > max_z) bunny_position->z = max_z;
+    if (sonic_position->x < min_x) sonic_position->x = min_x;
+    if (sonic_position->x > max_x) sonic_position->x = max_x;
+    if (sonic_position->z < min_z) sonic_position->z = min_z;
+    if (sonic_position->z > max_z) sonic_position->z = max_z;
 }
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null

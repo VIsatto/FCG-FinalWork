@@ -25,7 +25,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceRoot}",
+                "${workspaceRoot}/**",
                 "/usr/include",
                 "/usr/local/include"
             ],
