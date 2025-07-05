@@ -146,7 +146,9 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 void animateObject(glm::vec4* bunny_position, glm::vec4 view, float speed, float delta_t);
 void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t);
-void WallsCollision(glm::vec4* bunny_position, float bunny_half_size = 1.0);
+bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
+bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<AABB> obj_aabbs);
+void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_timer, float current_time, bool &projectile_fired, std::vector<AABB> out_aabbs, float proj_rotation);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -212,6 +214,7 @@ bool ColisionAABB(const AABB& a, const AABB& b);
 
 
 bool projectile_fired = false;
+bool can_shoot = true;
 
 int main(int argc, char* argv[])
 {
@@ -338,7 +341,11 @@ int main(int argc, char* argv[])
     glFrontFace(GL_CCW);
     
     float speed = 10.0f;
+    float proj_rotation= 90.0f;
+    float shoot_timer = -1.0f; // Timer para controlar o tempo entre disparos do projétil
     float prev_time = (float)glfwGetTime();
+
+
     glm::vec4 bunny_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     glm::vec4 projectile_position;
     glm::vec4 projectile_direction;
@@ -476,32 +483,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_south_wall");
 
 
-        if(space_pressed && !projectile_fired) {
-            // Inicia o disparo
-            projectile_position = bunny_position + glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
-            projectile_direction = glm::normalize(camera_view_vector);
-            projectile_fired = true;
-        }
-
-        if (projectile_fired) {
-            // Move o projétil
-            animateProjectile(&projectile_position, projectile_direction, speed, delta_t);
-
-            // Desenha o projétil
-            glm::mat4 model = Matrix_Translate(projectile_position.x, projectile_position.y, projectile_position.z)
-                            * Matrix_Scale(0.3f, 0.3f, 0.3f)
-                            * Matrix_Rotate_Y(90.0f);
-            glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(g_object_id_uniform, PROJECTILE);
-            DrawVirtualObject("the_projectile");
-
-            // Checa distância e reseta se necessário
-            float distance = glm::distance(projectile_position, bunny_position);
-            printf("Distância do projétil ao coelho: %.2f\n", distance);
-            if (distance > 15.0f) {
-                projectile_fired = false;
-            }
-        }
+       
 
 
         // Objetos transparentes/ Hit boxes ===========================================================
@@ -521,6 +503,8 @@ int main(int argc, char* argv[])
         // glUniform1i(g_object_id_uniform, HIT_BOX);
         // DrawVirtualObject("the_cube");
 
+        std::vector<AABB> out_aabbs;
+
         AABB bunny_aabb;
         bunny_aabb.min = glm::vec3(bunny_position.x - 1.0f, bunny_position.y - 1.0f, bunny_position.z - 1.0f);
         bunny_aabb.max = glm::vec3(bunny_position.x + 1.0f, bunny_position.y + 1.0f, bunny_position.z + 1.0f);
@@ -529,11 +513,28 @@ int main(int argc, char* argv[])
         sphere_aabb.min = glm::vec3(-3.0f - 1.0f, 0.0f - 1.0f, 0.0f - 1.0f);
         sphere_aabb.max = glm::vec3(-3.0f + 1.0f, 0.0f + 1.0f, 0.0f + 1.0f);
 
+        out_aabbs.push_back(sphere_aabb);
+
         // Verifica colisão entre a hit box do coelho e a hit box da esfera
         if (ColisionAABB(bunny_aabb, sphere_aabb))
         {
             bunny_position = bunny_position_anterior;
         }
+
+        AABB projec_aabb;
+         if(space_pressed && !projectile_fired && current_time - shoot_timer >= 0.8f ) {
+            // Inicia o disparo
+            projectile_position = bunny_position + glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f);
+            projectile_direction = glm::normalize(camera_view_vector);
+            projectile_fired = true;
+            shoot_timer = current_time;
+            printf("Disparando projétil!\n");
+        }
+
+        
+        if (projectile_fired) 
+            ProjectileFired(projectile_position, projectile_direction, speed, delta_t, shoot_timer, current_time, projectile_fired, out_aabbs, proj_rotation);
+        
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1416,18 +1417,67 @@ bool ColisionAABB(const AABB& a, const AABB& b) {
     return over_X && over_Y && over_Z;
 }
 
-void WallsCollision(glm::vec4* bunny_position, float bunny_half_size){
+bool WallsCollision(glm::vec4* obj_position, float obj_half_size){
     // Limites do ambiente (ajuste conforme necessário)
-    float min_x = -20.0f + bunny_half_size;
-    float max_x =  20.0f - bunny_half_size;
-    float min_z = -20.0f + bunny_half_size;
-    float max_z =  20.0f - bunny_half_size;
+    bool collision = false;
+    float min_x = -20.0f + obj_half_size;
+    float max_x =  20.0f - obj_half_size;
+    float min_z = -20.0f + obj_half_size;
+    float max_z =  20.0f - obj_half_size;
 
     // Checa e corrige colisão com as paredes
-    if (bunny_position->x < min_x) bunny_position->x = min_x;
-    if (bunny_position->x > max_x) bunny_position->x = max_x;
-    if (bunny_position->z < min_z) bunny_position->z = min_z;
-    if (bunny_position->z > max_z) bunny_position->z = max_z;
+    if (obj_position->x < min_x) {
+        obj_position->x = min_x;
+        collision = true;
+    }
+    if (obj_position->x > max_x) {
+        obj_position->x = max_x;
+        collision = true;
+    }
+    if (obj_position->z < min_z) {
+        obj_position->z = min_z;
+        collision = true;}
+    if (obj_position->z > max_z) {
+        obj_position->z = max_z;
+        collision = true;
+    }
+    return collision;
+}
+
+bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<AABB> out_aabbs) {
+    AABB projec_aabb;
+    projec_aabb.min = glm::vec3(projectile_position.x - 1.0f, projectile_position.y - 1.0f, projectile_position.z - 1.0f);
+    projec_aabb.max = glm::vec3(projectile_position.x + 1.0f, projectile_position.y + 1.0f, projectile_position.z + 1.0f);
+    for(AABB object : out_aabbs) {
+        if (ColisionAABB(projec_aabb, object)) {
+            return true;
+        }
+    }
+    if (WallsCollision(&projectile_position, projectile_half_size)) {
+        // Se a colisão for com as paredes, retornamos false
+        return true;
+    }
+    return false;
+}
+
+void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_timer, float current_time, bool &projectile_fired, std::vector<AABB> out_aabbs, float proj_rotation){
+    animateProjectile(&projectile_position, projectile_direction, speed, delta_t); 
+    // Desenha o projétil
+    glm::mat4 model = Matrix_Translate(projectile_position.x, projectile_position.y, projectile_position.z)
+                    * Matrix_Scale(0.3f, 0.3f, 0.3f)
+                    * Matrix_Rotate_Y(proj_rotation)
+                    * Matrix_Rotate_X(proj_rotation);
+    glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, PROJECTILE);
+    DrawVirtualObject("the_projectile");
+    proj_rotation += 0.05f;
+
+
+    // Checa distância e reseta se necessário
+
+    if (current_time - shoot_timer > 0.8f || ProjectileCollision(projectile_position, 1.0f, out_aabbs)) {
+        projectile_fired = false;
+    }
 }
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
