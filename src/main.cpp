@@ -43,6 +43,9 @@
 #include <tiny_obj_loader.h>
 #include <stb_image.h>
 
+// Header da biblioteca stb_image para carregar imagens
+#include <stb_image.h>
+
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
@@ -142,12 +145,11 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
-void animateObject(glm::vec4* sonic_position, glm::vec4 view, float speed, float delta_t);
-void WallsCollision(glm::vec4* sonic_position, float bunny_half_size = 1.0);
-bool ColisionAABB(const AABB& a, const AABB& b);
-
-void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
-
+void animateObject(glm::vec4* bunny_position, glm::vec4 view, float speed, float delta_t);
+void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t);
+bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
+bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<AABB> obj_aabbs);
+void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_timer, float current_time, bool &projectile_fired, std::vector<AABB> out_aabbs, float proj_rotation);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -198,16 +200,24 @@ GLint g_view_uniform;
 GLint g_projection_uniform;
 GLint g_object_id_uniform;
 
+// Número de texturas carregadas pela função LoadTextureImage()
+GLuint g_NumLoadedTextures = 0;
+
 // Variaveis de tecla
 bool d_pressed = false;
 bool w_pressed = false;
 bool a_pressed = false;
 bool s_pressed = false;
 bool shift_pressed = false; 
+bool space_pressed = false;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 // Número de texturas carregadas pela função LoadTextureImage()
+
+
+bool projectile_fired = false;
+bool can_shoot = true;
 
 int main(int argc, char* argv[])
 {
@@ -283,7 +293,6 @@ int main(int argc, char* argv[])
     LoadShadersFromFiles();
 
     // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/monster_texture.png"); // TextureImage0
 
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/monster_texture.png"); // TextureImage0
@@ -332,6 +341,10 @@ int main(int argc, char* argv[])
     ObjModel robotnikmodel("../../data/robotnik.obj");
     ComputeNormals(&robotnikmodel);
     BuildTrianglesAndAddToVirtualScene(&robotnikmodel);
+    ObjModel projectile("../../data/projectile.obj");
+    ComputeNormals(&projectile);
+    BuildTrianglesAndAddToVirtualScene(&projectile);
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -347,8 +360,14 @@ int main(int argc, char* argv[])
     glFrontFace(GL_CCW);
     
     float speed = 10.0f;
+    float proj_rotation= 90.0f;
+    float shoot_timer = -1.0f; // Timer para controlar o tempo entre disparos do projétil
     float prev_time = (float)glfwGetTime();
+
+
     glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec4 projectile_position;
+    glm::vec4 projectile_direction;
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -391,11 +410,10 @@ int main(int argc, char* argv[])
         float delta_t = current_time - prev_time;
         prev_time = current_time;
 
+
         glm::vec4 sonic_position_anterior = sonic_position; // Salva posição antes de mover        
         animateObject(&sonic_position, camera_view_vector, speed, delta_t);
         WallsCollision(&sonic_position);
-
-        camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); 
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
@@ -434,11 +452,7 @@ int main(int argc, char* argv[])
         #define MONSTER 9
         #define SONIC 10
         #define ROBOTNIK 11
-
-        #define MONSTER 9
-        #define SONIC 10
-        #define ROBOTNIK 11
-
+        #define PROJECTILE 12
 
         // Desenhamos o modelo da esfera
         model = Matrix_Translate(-3.0f,-1.0f,0.0f)
@@ -490,6 +504,7 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, SONIC);
         DrawVirtualObject("Sonic:CHR_NML_SNC1");
 
+
         //desenhamos chão e paredes
         model = Matrix_Translate(0.0f,-1.0f,0.0f)
                 * Matrix_Scale(20.0f, 1.0f, 20.0f);
@@ -526,6 +541,10 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, SOUTH_WALL);
         DrawVirtualObject("the_south_wall");
 
+
+       
+
+
         // Objetos transparentes/ Hit boxes ===========================================================
 
         // glEnable(GL_BLEND);
@@ -544,6 +563,8 @@ int main(int argc, char* argv[])
         // glUniform1i(g_object_id_uniform, HIT_BOX);
         // DrawVirtualObject("the_cube");
 
+        std::vector<AABB> out_aabbs;
+
         AABB bunny_aabb;
         bunny_aabb.min = glm::vec3(sonic_position.x - 1.0f, sonic_position.y - 1.0f, sonic_position.z - 1.0f);
         bunny_aabb.max = glm::vec3(sonic_position.x + 1.0f, sonic_position.y + 1.0f, sonic_position.z + 1.0f);
@@ -554,12 +575,36 @@ int main(int argc, char* argv[])
         sphere_aabb.min = glm::vec3(-3.0f - 1.0f, 0.0f - 1.0f, 0.0f - 1.0f);
         sphere_aabb.max = glm::vec3(-3.0f + 1.0f, 0.0f + 1.0f, 0.0f + 1.0f);
 
+        out_aabbs.push_back(sphere_aabb);
+
         // Verifica colisão entre a hit box do coelho e a hit box da esfera
         if (ColisionAABB(bunny_aabb, sphere_aabb))
         {
             sonic_position = sonic_position_anterior;
             sonic_position = sonic_position_anterior;
         }
+
+        AABB projec_aabb;
+         if(space_pressed && !projectile_fired && current_time - shoot_timer >= 0.8f ) {
+            // Calcula a direção normalizada do coelho (para onde ele está olhando)
+            glm::vec4 sonic_forward = glm::normalize(camera_view_vector);
+
+            // Define a posição inicial do projétil um pouco à frente do coelho
+            float offset = 1.0f; // ajuste conforme necessário
+            projectile_position = sonic_position + sonic_forward * offset;
+
+            // Define a direção do projétil igual à direção do coelho
+            projectile_direction = sonic_forward;
+
+            projectile_fired = true;
+            shoot_timer = current_time;
+            printf("Disparando projétil!\n");
+        }
+
+        
+        if (projectile_fired) 
+            ProjectileFired(projectile_position, projectile_direction, speed, delta_t, shoot_timer, current_time, projectile_fired, out_aabbs, proj_rotation);
+        
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -657,6 +702,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
     glUseProgram(0);
 }
+
 
 // Função que computa as normais de um ObjModel, caso elas não tenham sido
 // especificadas dentro do arquivo ".obj"
@@ -1209,9 +1255,18 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
             // Usuário largou a tecla SHIFT, então atualizamos o estado para NÃO pressionada
             shift_pressed = false;
     }
+    
+    if (key == GLFW_KEY_SPACE)
     {
-        /* code */
+        if (action == GLFW_PRESS)
+            // Usuário apertou a tecla SPACE, então atualizamos o estado para pressionada
+            space_pressed = true;
+
+        else if (action == GLFW_RELEASE)
+            // Usuário largou a tecla SPACE, então atualizamos o estado para NÃO pressionada
+            space_pressed = false;
     }
+    
     
 }
 
@@ -1445,8 +1500,8 @@ void LoadTextureImage(const char* filename)
 
 void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t){
 
-    view = glm::vec4(view.x,0.0f,view.z,0.0);
-    view = view/ norm(view);
+    view = glm::vec4(view.x, 0.0f, view.z, 0.0f);
+    view = view / norm(view);
 
     glm::vec4 left_dir = crossproduct(view, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
     left_dir = left_dir/norm(left_dir);
@@ -1476,6 +1531,16 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     
     }
 
+    void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t)
+{
+    view = glm::vec4(view.x, 0.0f, view.z, 0.0f);
+    view = view / norm(view);
+
+    float projectile_speed = speed * 2.0f;
+
+    // Move o objeto na direção da visão apenas uma vez por chamada
+    *object_position += view * projectile_speed * delta_t;
+}
 bool ColisionAABB(const AABB& a, const AABB& b) {
     // Verifica se há sobreposição em cada eixo
     bool over_X = (a.min.x <= b.max.x && a.max.x >= b.min.x);
@@ -1486,22 +1551,67 @@ bool ColisionAABB(const AABB& a, const AABB& b) {
     return over_X && over_Y && over_Z;
 }
 
-void WallsCollision(glm::vec4* sonic_position, float bunny_half_size){
+bool WallsCollision(glm::vec4* obj_position, float obj_half_size){
     // Limites do ambiente (ajuste conforme necessário)
-    float min_x = -20.0f + bunny_half_size;
-    float max_x =  20.0f - bunny_half_size;
-    float min_z = -20.0f + bunny_half_size;
-    float max_z =  20.0f - bunny_half_size;
+    bool collision = false;
+    float min_x = -20.0f + obj_half_size;
+    float max_x =  20.0f - obj_half_size;
+    float min_z = -20.0f + obj_half_size;
+    float max_z =  20.0f - obj_half_size;
 
     // Checa e corrige colisão com as paredes
-    if (sonic_position->x < min_x) sonic_position->x = min_x;
-    if (sonic_position->x > max_x) sonic_position->x = max_x;
-    if (sonic_position->z < min_z) sonic_position->z = min_z;
-    if (sonic_position->z > max_z) sonic_position->z = max_z;
-    if (sonic_position->x < min_x) sonic_position->x = min_x;
-    if (sonic_position->x > max_x) sonic_position->x = max_x;
-    if (sonic_position->z < min_z) sonic_position->z = min_z;
-    if (sonic_position->z > max_z) sonic_position->z = max_z;
+    if (obj_position->x < min_x) {
+        obj_position->x = min_x;
+        collision = true;
+    }
+    if (obj_position->x > max_x) {
+        obj_position->x = max_x;
+        collision = true;
+    }
+    if (obj_position->z < min_z) {
+        obj_position->z = min_z;
+        collision = true;}
+    if (obj_position->z > max_z) {
+        obj_position->z = max_z;
+        collision = true;
+    }
+    return collision;
+}
+
+bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<AABB> out_aabbs) {
+    AABB projec_aabb;
+    projec_aabb.min = glm::vec3(projectile_position.x - 1.0f, projectile_position.y - 1.0f, projectile_position.z - 1.0f);
+    projec_aabb.max = glm::vec3(projectile_position.x + 1.0f, projectile_position.y + 1.0f, projectile_position.z + 1.0f);
+    for(AABB object : out_aabbs) {
+        if (ColisionAABB(projec_aabb, object)) {
+            return true;
+        }
+    }
+    if (WallsCollision(&projectile_position, projectile_half_size)) {
+        // Se a colisão for com as paredes, retornamos false
+        return true;
+    }
+    return false;
+}
+
+void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_timer, float current_time, bool &projectile_fired, std::vector<AABB> out_aabbs, float proj_rotation){
+    animateProjectile(&projectile_position, projectile_direction, speed, delta_t); 
+    // Desenha o projétil
+    glm::mat4 model = Matrix_Translate(projectile_position.x, projectile_position.y, projectile_position.z)
+                    * Matrix_Scale(0.3f, 0.3f, 0.3f)
+                    * Matrix_Rotate_Y(proj_rotation)
+                    * Matrix_Rotate_X(proj_rotation);
+    glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, PROJECTILE);
+    DrawVirtualObject("the_projectile");
+    proj_rotation += 0.05f;
+
+
+    // Checa distância e reseta se necessário
+
+    if (current_time - shoot_timer > 0.8f || ProjectileCollision(projectile_position, 1.0f, out_aabbs)) {
+        projectile_fired = false;
+    }
 }
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null

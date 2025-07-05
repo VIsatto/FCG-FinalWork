@@ -31,6 +31,7 @@ uniform mat4 projection;
 #define MONSTER 9
 #define SONIC 10
 #define ROBOTNIK 11
+#define PROJECTILE 12
 
 uniform int object_id;
 
@@ -140,7 +141,6 @@ void main()
         Kd = vec3(0.2, 0.2, 0.2);
         Ks = vec3(0.3, 0.3, 0.3);
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
     }
@@ -152,7 +152,7 @@ void main()
         Kd = vec3(0.2, 0.2, 0.2);
         Ks = vec3(0.3, 0.3, 0.3);
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
+       
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
     }
@@ -164,7 +164,6 @@ void main()
         Kd = vec3(0.2, 0.2, 0.2);
         Ks = vec3(0.3, 0.3, 0.3);
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
     }
@@ -176,9 +175,17 @@ void main()
         Kd = vec3(0.2, 0.2, 0.2);
         Ks = vec3(0.3, 0.3, 0.3);
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
+    }
+
+    else if(object_id == PROJECTILE){
+        Kd = vec3(0.2, 0.2, 0.2);
+        Ks = vec3(0.3, 0.3, 0.3);
+
+        Ka = vec3(0.6,0.6,0.6);
+        q = 20.0;
+
     }
     else // Objeto desconhecido = preto
     {
