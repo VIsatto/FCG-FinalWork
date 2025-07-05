@@ -147,11 +147,7 @@ void WallsCollision(glm::vec4* sonic_position, float bunny_half_size = 1.0);
 bool ColisionAABB(const AABB& a, const AABB& b);
 
 void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
-void animateObject(glm::vec4* sonic_position, glm::vec4 view, float speed, float delta_t);
-void WallsCollision(glm::vec4* sonic_position, float bunny_half_size = 1.0);
-bool ColisionAABB(const AABB& a, const AABB& b);
 
-void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -212,7 +208,6 @@ bool shift_pressed = false;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 // Número de texturas carregadas pela função LoadTextureImage()
-GLuint g_NumLoadedTextures = 0;
 
 int main(int argc, char* argv[])
 {
@@ -337,19 +332,6 @@ int main(int argc, char* argv[])
     ObjModel robotnikmodel("../../data/robotnik.obj");
     ComputeNormals(&robotnikmodel);
     BuildTrianglesAndAddToVirtualScene(&robotnikmodel);
-
-    ObjModel monstermdoel("../../data/monster.obj");
-    ComputeNormals(&monstermdoel);
-    BuildTrianglesAndAddToVirtualScene(&monstermdoel);
-
-    ObjModel sonicmodel("../../data/sonic.obj");
-    ComputeNormals(&sonicmodel);
-    BuildTrianglesAndAddToVirtualScene(&sonicmodel);
-
-    ObjModel robotnikmodel("../../data/robotnik.obj");
-    ComputeNormals(&robotnikmodel);
-    BuildTrianglesAndAddToVirtualScene(&robotnikmodel);
-
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -366,7 +348,6 @@ int main(int argc, char* argv[])
     
     float speed = 10.0f;
     float prev_time = (float)glfwGetTime();
-    glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -400,8 +381,6 @@ int main(int argc, char* argv[])
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l    = sonic_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
         glm::vec4 camera_lookat_l    = sonic_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
@@ -1463,57 +1442,6 @@ void LoadTextureImage(const char* filename)
     g_NumLoadedTextures += 1;
 }
 
-// Função que carrega uma imagem para ser utilizada como textura
-void LoadTextureImage(const char* filename)
-{
-    printf("Carregando imagem \"%s\"... ", filename);
-
-    // Primeiro fazemos a leitura da imagem do disco
-    stbi_set_flip_vertically_on_load(true);
-    int width;
-    int height;
-    int channels;
-    unsigned char *data = stbi_load(filename, &width, &height, &channels, 3);
-
-    if ( data == NULL )
-    {
-        fprintf(stderr, "ERROR: Cannot open image file \"%s\".\n", filename);
-        std::exit(EXIT_FAILURE);
-    }
-
-    printf("OK (%dx%d).\n", width, height);
-
-    // Agora criamos objetos na GPU com OpenGL para armazenar a textura
-    GLuint texture_id;
-    GLuint sampler_id;
-    glGenTextures(1, &texture_id);
-    glGenSamplers(1, &sampler_id);
-
-    // Veja slides 95-96 do documento Aula_20_Mapeamento_de_Texturas.pdf
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Parâmetros de amostragem da textura.
-    glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glSamplerParameteri(sampler_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // Agora enviamos a imagem lida do disco para a GPU
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-
-    GLuint textureunit = g_NumLoadedTextures;
-    glActiveTexture(GL_TEXTURE0 + textureunit);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glBindSampler(textureunit, sampler_id);
-
-    stbi_image_free(data);
-
-    g_NumLoadedTextures += 1;
-}
 
 void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t){
 
