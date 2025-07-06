@@ -495,35 +495,35 @@ int main(int argc, char* argv[])
 
         //desenhamos chão e paredes
         model = Matrix_Translate(0.0f,-1.0f,0.0f)
-                * Matrix_Scale(20.0f, 1.0f, 20.0f);
+                * Matrix_Scale(50.0f, 1.0f, 50.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, FLOOR);
         DrawVirtualObject("the_floor");
 
-        model = Matrix_Translate(20.0f,-1.0f,0.0f)
-                * Matrix_Scale(1.0f, 20.0f, 20.0f);
+        model = Matrix_Translate(50.0f,-1.0f,0.0f)
+                * Matrix_Scale(1.0f, 20.0f, 50.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, EAST_WALL);
         DrawVirtualObject("the_east_wall");
 
-        model = Matrix_Translate(-20.0f,-1.0f,0.0f)
-                * Matrix_Scale(1.0f, 20.0f, 20.0f);
+        model = Matrix_Translate(-50.0f,-1.0f,0.0f)
+                * Matrix_Scale(1.0f, 20.0f, 50.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, WEST_WALL);
         DrawVirtualObject("the_west_wall");
 
-        model = Matrix_Translate(0.0f,-1.0f, -20.0f)
-                * Matrix_Scale(20.0f, 20.0f, 1.0f);
+        model = Matrix_Translate(0.0f,-1.0f, -50.0f)
+                * Matrix_Scale(50.0f, 20.0f, 1.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, NORTH_WALL);
         DrawVirtualObject("the_north_wall");
 
-        model = Matrix_Translate(0.0f,-1.0f,20.0f)
-                * Matrix_Scale(20.0f, 20.0f, 1.0f);
+        model = Matrix_Translate(0.0f,-1.0f,50.0f)
+                * Matrix_Scale(50.0f, 20.0f, 1.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SOUTH_WALL);
@@ -567,7 +567,7 @@ int main(int argc, char* argv[])
         }
 
         AABB projec_aabb;
-         if(space_pressed && !projectile_fired && current_time - shoot_time >= 0.8f ) {
+         if(space_pressed && !projectile_fired && current_time - shoot_time >= 1.0f ) {
             // Calcula a direção normalizada do coelho (para onde ele está olhando)
             glm::vec4 sonic_forward = glm::normalize(camera_view_vector);
 
@@ -1580,10 +1580,10 @@ bool ColisionAABB(const AABB& a, const AABB& b) {
 bool WallsCollision(glm::vec4* obj_position, float obj_half_size){
     // Limites do ambiente (ajuste conforme necessário)
     bool collision = false;
-    float min_x = -20.0f + obj_half_size;
-    float max_x =  20.0f - obj_half_size;
-    float min_z = -20.0f + obj_half_size;
-    float max_z =  20.0f - obj_half_size;
+    float min_x = -50.0f + obj_half_size;
+    float max_x =  50.0f - obj_half_size;
+    float min_z = -50.0f + obj_half_size;
+    float max_z =  50.0f - obj_half_size;
 
     // Checa e corrige colisão com as paredes
     if (obj_position->x < min_x) {
@@ -1636,7 +1636,7 @@ void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_directi
 
     // Checa distância e reseta se necessário
 
-    if (current_time - shoot_time > 0.8f || ProjectileCollision(projectile_position, 1.0f, out_aabbs)) {
+    if (current_time - shoot_time > 1.0f || ProjectileCollision(projectile_position, 1.0f, out_aabbs)) {
         projectile_fired = false;
     }
 }
