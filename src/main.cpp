@@ -295,10 +295,8 @@ int main(int argc, char* argv[])
     //
     LoadShadersFromFiles();
 
-    // Carregamos duas imagens para serem utilizadas como textura
-
-    // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/monster_texture.png"); // TextureImage0
+    LoadTextureImage("../../data/sonic_texture.png"); // TextureImage0
+    LoadTextureImage("../../data/RobotnikFinal_Color.png"); // TextureImage1
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -332,10 +330,6 @@ int main(int argc, char* argv[])
     ObjModel cubemodel("../../data/cube.obj");
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
-
-    ObjModel monstermdoel("../../data/monster.obj");
-    ComputeNormals(&monstermdoel);
-    BuildTrianglesAndAddToVirtualScene(&monstermdoel);
 
     ObjModel sonicmodel("../../data/sonic.obj");
     ComputeNormals(&sonicmodel);
@@ -454,7 +448,6 @@ int main(int argc, char* argv[])
         #define SOUTH_WALL  6
         #define HIT_SPHERE 7
         #define HIT_BOX 8
-        #define MONSTER 9
         #define SONIC 10
         #define ROBOTNIK 11
         #define PROJECTILE 12

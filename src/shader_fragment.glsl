@@ -41,6 +41,7 @@ uniform vec4 bbox_max;
 
 // Variáveis para acesso das imagens de textura
 uniform sampler2D TextureImage0;
+uniform sampler2D TextureImage1;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -88,19 +89,7 @@ void main()
 
     if ( object_id == ROBOTNIK )
     {
-        float minx = bbox_min.x;
-        float maxx = bbox_max.x;
-
-        float miny = bbox_min.y;
-        float maxy = bbox_max.y;
-
-        float minz = bbox_min.z;
-        float maxz = bbox_max.z;
-
-        U = (position_model.x - minx)/(maxx-minx);
-        V = (position_model.y - miny)/(maxy-miny);
-
-        Kd = texture(TextureImage0, vec2(U,V)).rgb;
+        Kd = texture(TextureImage1, texcoords).rgb;
         Ks = vec3(0.0,0.0,0.0);
         Ka = 0.5 * Kd;
         q = 1.0;
@@ -118,12 +107,11 @@ void main()
     }
     else if ( object_id == SONIC )
     {
-        // PREENCHA AQUI
-        // Propriedades espectrais do coelho
-        Kd = vec3(0.08, 0.4, 0.8);
-        Ks = vec3(0.8,0.8,0.8);
+
+        Kd = texture(TextureImage0, texcoords).rgb;
+        Ks = vec3(0.0,0.0,0.0);
         Ka = 0.5 * Kd;
-        q = 32.0;
+        q = 1.0;
     }
     else if ( object_id == FLOOR)
     {
