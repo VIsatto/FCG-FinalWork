@@ -154,6 +154,7 @@ bool ColisionAABB(const AABB& a, const AABB& b);
 bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
 bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<AABB> obj_aabbs);
 void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_time, float current_time, bool &projectile_fired, std::vector<AABB> out_aabbs, float &proj_rotation);
+void ChaseSonic(float *robot_x, float *robot_z, glm::vec4 sonic_position, float speed, float delta_t);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -250,7 +251,7 @@ int main(int argc, char* argv[])
     // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047 - 00550573 - Vicente Tolentino Isatto", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "Sonic Bomba", NULL, NULL);
     
     if (!window)
     {
@@ -360,6 +361,8 @@ int main(int argc, char* argv[])
     float proj_rotation= 3.0f;
     float shoot_time = -1.0f; // Timer para controlar o tempo entre disparos do projétil
     float prev_time = (float)glfwGetTime();
+    float robot_x = -3.0f;
+    float robot_z = 0.0f;
 
 
     glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -462,7 +465,7 @@ int main(int argc, char* argv[])
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // Desenhamos o modelo do robotnik
-        model = Matrix_Translate(-3.0f,-1.0f,0.0f)
+        model = Matrix_Translate(robot_x,-1.0f,robot_z)
               * Matrix_Rotate_X(-1.57079632679489661923)
               * Matrix_Scale(0.02f,0.02f,0.02f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
@@ -554,8 +557,8 @@ int main(int argc, char* argv[])
         sonic_aabb.max = glm::vec3(sonic_position.x + 1.0f, sonic_position.y + 1.0f, sonic_position.z + 1.0f);
 
         AABB eggman_aabb;
-        eggman_aabb.min = glm::vec3(-3.0f - 1.0f, 0.0f - 1.0f, 0.0f - 1.0f);
-        eggman_aabb.max = glm::vec3(-3.0f + 1.0f, 0.0f + 1.0f, 0.0f + 1.0f);
+        eggman_aabb.min = glm::vec3(robot_x - 1.0f, 0.0f - 1.0f, robot_z - 1.0f);
+        eggman_aabb.max = glm::vec3(robot_x + 1.0f, 0.0f + 1.0f, robot_z + 1.0f);
 
         out_aabbs.push_back(eggman_aabb);
 
@@ -586,6 +589,7 @@ int main(int argc, char* argv[])
         if (projectile_fired) 
             ProjectileFired(projectile_position, projectile_direction, speed, delta_t, shoot_time, current_time, projectile_fired, out_aabbs, proj_rotation);
         
+        ChaseSonic(&robot_x, &robot_z, sonic_position, speed/3, delta_t);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1643,3 +1647,23 @@ void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_directi
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
+
+void ChaseSonic(float *robot_x, float *robot_z, glm::vec4 sonic_position, float speed, float delta_t) {
+    if( sonic_position.x < *robot_x - 2.0f) {
+        *robot_x -= speed * delta_t;
+    } else if (sonic_position.x > *robot_x + 2.0f) {
+        // Sonic está à direita do robô, move para a esquerda
+        *robot_x += speed * delta_t;
+    }
+    if (sonic_position.z < *robot_z - 2.0f) {
+        // Sonic está atrás do robô, move para frente
+        *robot_z -= speed * delta_t;
+    } else if (sonic_position.z > *robot_z + 2.0f) {
+        // Sonic está na frente do robô, move para trás
+        *robot_z += speed * delta_t;
+    }
+    
+    
+    
+    
+}
