@@ -217,8 +217,6 @@ bool s_pressed = false;
 bool shift_pressed = false; 
 bool space_pressed = false;
 
-
-
 bool projectile_fired = false;
 bool can_shoot = true;
 
@@ -251,7 +249,7 @@ int main(int argc, char* argv[])
     // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047 - 00550573 - Vicente Tolentino Isatto", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "SonicBoomba", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -297,7 +295,8 @@ int main(int argc, char* argv[])
 
     LoadTextureImage("../../data/sonic_model/sonic_texture.png"); // TextureImage0
     LoadTextureImage("../../data/robotnik_model/RobotnikFinal_Color.png"); // TextureImage1
-    LoadTextureImage("../../data/projectile_model/ring_texture.png"); // TextureImage2
+    LoadTextureImage("../../data/room_model/rocky_texture.jpg"); // TextureImage2
+    LoadTextureImage("../../data/environment_model/environment.png"); // TextureImage3
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/shape_model/sphere.obj");
@@ -449,6 +448,9 @@ int main(int argc, char* argv[])
         #define ROBOTNIK 11
         #define PROJECTILE 12
 
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
         // Desenhamos o modelo do robotnik
         model = Matrix_Translate(-3.0f,-1.0f,0.0f)
               * Matrix_Rotate_X(-1.57079632679489661923)
@@ -519,9 +521,6 @@ int main(int argc, char* argv[])
 
 
         // Objetos transparentes/ Hit boxes ===========================================================
-
-        // glEnable(GL_BLEND);
-        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // // Desenhamos o modelo da hit box do coelho
         // model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z);
