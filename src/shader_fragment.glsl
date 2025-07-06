@@ -171,12 +171,10 @@ void main()
     }
 
     else if(object_id == PROJECTILE){
-        Kd = vec3(0.2, 0.2, 0.2);
-        Ks = vec3(0.3, 0.3, 0.3);
-
+        Kd = vec3(1.0, 1.0, 0.0);
+        Ks = vec3(0.1, 0.1, 0.1);
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
-
     }
     else // Objeto desconhecido = preto
     {

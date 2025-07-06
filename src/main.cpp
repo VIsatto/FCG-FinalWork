@@ -295,50 +295,47 @@ int main(int argc, char* argv[])
     //
     LoadShadersFromFiles();
 
-    LoadTextureImage("../../data/sonic_texture.png"); // TextureImage0
-    LoadTextureImage("../../data/RobotnikFinal_Color.png"); // TextureImage1
+    LoadTextureImage("../../data/sonic_model/sonic_texture.png"); // TextureImage0
+    LoadTextureImage("../../data/robotnik_model/RobotnikFinal_Color.png"); // TextureImage1
+    LoadTextureImage("../../data/projectile_model/ring_texture.png"); // TextureImage2
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel("../../data/sphere.obj");
+    ObjModel spheremodel("../../data/shape_model/sphere.obj");
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel("../../data/bunny.obj");
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
-
-    ObjModel floormodel("../../data/floor.obj");
+    ObjModel floormodel("../../data/room_model/floor.obj");
     ComputeNormals(&floormodel);
     BuildTrianglesAndAddToVirtualScene(&floormodel);
 
-    ObjModel east_wallmodel("../../data/east_wall.obj");
+    ObjModel east_wallmodel("../../data/room_model/east_wall.obj");
     ComputeNormals(&east_wallmodel);
     BuildTrianglesAndAddToVirtualScene(&east_wallmodel);
 
-    ObjModel west_wallmodel("../../data/west_wall.obj");
+    ObjModel west_wallmodel("../../data/room_model/west_wall.obj");
     ComputeNormals(&west_wallmodel);
     BuildTrianglesAndAddToVirtualScene(&west_wallmodel);
 
-    ObjModel north_wallmodel("../../data/north_wall.obj");
+    ObjModel north_wallmodel("../../data/room_model/north_wall.obj");
     ComputeNormals(&north_wallmodel);
     BuildTrianglesAndAddToVirtualScene(&north_wallmodel);
 
-    ObjModel south_wallmodel("../../data/south_wall.obj");
+    ObjModel south_wallmodel("../../data/room_model/south_wall.obj");
     ComputeNormals(&south_wallmodel);
     BuildTrianglesAndAddToVirtualScene(&south_wallmodel);
 
-    ObjModel cubemodel("../../data/cube.obj");
+    ObjModel cubemodel("../../data/shape_model/cube.obj");
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
 
-    ObjModel sonicmodel("../../data/sonic.obj");
+    ObjModel sonicmodel("../../data/sonic_model/sonic.obj");
     ComputeNormals(&sonicmodel);
     BuildTrianglesAndAddToVirtualScene(&sonicmodel);
 
-    ObjModel robotnikmodel("../../data/robotnik.obj");
+    ObjModel robotnikmodel("../../data/robotnik_model/robotnik.obj");
     ComputeNormals(&robotnikmodel);
     BuildTrianglesAndAddToVirtualScene(&robotnikmodel);
-    ObjModel projectile("../../data/projectile.obj");
+    ObjModel projectile("../../data/projectile_model/projectile.obj");
     ComputeNormals(&projectile);
     BuildTrianglesAndAddToVirtualScene(&projectile);
 
@@ -452,10 +449,7 @@ int main(int argc, char* argv[])
         #define ROBOTNIK 11
         #define PROJECTILE 12
 
-        // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-3.0f,-1.0f,0.0f)
-              * Matrix_Rotate_X(-1.57079632679489661923)
-              * Matrix_Scale(0.02f,0.02f,0.02f);
+        // Desenhamos o modelo do robotnik
         model = Matrix_Translate(-3.0f,-1.0f,0.0f)
               * Matrix_Rotate_X(-1.57079632679489661923)
               * Matrix_Scale(0.02f,0.02f,0.02f);
@@ -473,21 +467,8 @@ int main(int argc, char* argv[])
         DrawVirtualObject("Hands");
         DrawVirtualObject("ButtonLow1");
         DrawVirtualObject("ButtonLow2");
-        glUniform1i(g_object_id_uniform, ROBOTNIK);
-        DrawVirtualObject("ButtonLow3");
-        DrawVirtualObject("TeethTop");
-        DrawVirtualObject("HeadLow");
-        DrawVirtualObject("Mustache");
-        DrawVirtualObject("TeethBottom");
-        DrawVirtualObject("ButtonLow");
-        DrawVirtualObject("PantsLow");
-        DrawVirtualObject("ShirtLow");
-        DrawVirtualObject("GlassesLow3");
-        DrawVirtualObject("Hands");
-        DrawVirtualObject("ButtonLow1");
-        DrawVirtualObject("ButtonLow2");
 
-        // Desenhamos o modelo do coelho
+        // Desenhamos o modelo do sonic
         model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
               * Matrix_Rotate_Y(g_CameraTheta-3.0f)
               * Matrix_Rotate_X(-1.57079632679489661923)
@@ -499,9 +480,6 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SONIC);
         DrawVirtualObject("Sonic:CHR_NML_SNC1");
-        glUniform1i(g_object_id_uniform, SONIC);
-        DrawVirtualObject("Sonic:CHR_NML_SNC1");
-
 
         //desenhamos chão e paredes
         model = Matrix_Translate(0.0f,-1.0f,0.0f)
@@ -538,9 +516,6 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SOUTH_WALL);
         DrawVirtualObject("the_south_wall");
-
-
-       
 
 
         // Objetos transparentes/ Hit boxes ===========================================================
@@ -1620,7 +1595,7 @@ void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_directi
     animateProjectile(&projectile_position, projectile_direction, speed, delta_t); 
     // Desenha o projétil
     glm::mat4 model = Matrix_Translate(projectile_position.x, projectile_position.y, projectile_position.z)
-                    * Matrix_Scale(0.5f, 0.5f, 0.5f)
+                    * Matrix_Scale(0.8f, 0.8f, 0.8f)
                     * Matrix_Rotate_Y(proj_rotation)
                     * Matrix_Rotate_X(proj_rotation);
     glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
