@@ -1,7 +1,0 @@
-g the_west_wall
-v 0 1 1   // topo frente
-v 0 1 -1  // topo trás
-v 0 0 1   // base frente
-v 0 0 -1  // base trás
-f 2 1 3
-f 4 2 3

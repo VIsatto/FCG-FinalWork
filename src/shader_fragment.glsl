@@ -41,6 +41,8 @@ uniform vec4 bbox_max;
 
 // Variáveis para acesso das imagens de textura
 uniform sampler2D TextureImage0;
+uniform sampler2D TextureImage1;
+uniform sampler2D TextureImage2;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -88,19 +90,11 @@ void main()
 
     if ( object_id == ROBOTNIK )
     {
-        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
-
-        vec4 r = position_model - bbox_center;
-        float theta = atan(position_model.x, position_model.z);
-        float phi = asin(position_model.y/length(r));
-
-        U = (theta + M_PI)/ (2.0f*M_PI);
-        V = (phi + M_PI/2)/ M_PI;
-
-        Kd = texture(TextureImage0, vec2(U,V)).rgb;
+        Kd = texture(TextureImage1, texcoords).rgb;
         Ks = vec3(0.0,0.0,0.0);
         Ka = 0.5 * Kd;
         q = 1.0;
+        color.a = 1.0;
     }
     else if ( object_id == HIT_BOX )
     {
@@ -110,28 +104,29 @@ void main()
         Ks = vec3(0.0,0.0,0.0);
         Ka = 0.5 * Kd;
         q = 1.0;
-
-
+        color.a = 0.4;
     }
     else if ( object_id == SONIC )
     {
-        // PREENCHA AQUI
-        // Propriedades espectrais do coelho
-        Kd = vec3(0.08, 0.4, 0.8);
-        Ks = vec3(0.8,0.8,0.8);
+
+        Kd = texture(TextureImage0, texcoords).rgb;
+        Ks = vec3(0.0,0.0,0.0);
         Ka = 0.5 * Kd;
-        q = 32.0;
+        q = 1.0;
+        color.a = 1.0;
+
     }
     else if ( object_id == FLOOR)
     {
-        // PREENCHA AQUI
-        // Propriedades espectrais do plano
-        Kd = vec3(0.2, 0.2, 0.2);
-        Ks = vec3(0.3, 0.3, 0.3);
+        U = texcoords.x;
+        V = texcoords.y;
 
-        //Ao zerar o Ka, o chão ficava preto. Optei por colocar estes valores para ficar semelhante a imagem do enunciado.
-        Ka = vec3(0.6,0.6,0.6);
-        q = 20.0;
+        Kd = texture(TextureImage2, vec2(U,V)).rgb;
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = 0.5 * Kd;
+        q = 1.0;
+        color.a = 1.0;
+
     }
 
     else if ( object_id == EAST_WALL)
@@ -143,6 +138,8 @@ void main()
 
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
+        color.a = 0.0;
+
     }
     
     else if ( object_id == WEST_WALL)
@@ -155,6 +152,7 @@ void main()
        
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
+        color.a = 0.0;
     }
 
     else if ( object_id == NORTH_WALL)
@@ -166,6 +164,8 @@ void main()
 
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
+        color.a = 0.0;
+
     }
 
     else if ( object_id == SOUTH_WALL)
@@ -177,14 +177,16 @@ void main()
 
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
+        color.a = 0.0;
+
     }
 
     else if(object_id == PROJECTILE){
-        Kd = vec3(0.2, 0.2, 0.2);
-        Ks = vec3(0.3, 0.3, 0.3);
-
+        Kd = vec3(1.0, 1.0, 0.0);
+        Ks = vec3(0.1, 0.1, 0.1);
         Ka = vec3(0.6,0.6,0.6);
         q = 20.0;
+        color.a = 1.0;
 
     }
     else // Objeto desconhecido = preto
@@ -193,6 +195,8 @@ void main()
         Ks = vec3(0.0,0.0,0.0);
         Ka = vec3(0.0,0.0,0.0);
         q = 1.0;
+        color.a = 1.0;
+
     }
 
     // Espectro da fonte de iluminação
@@ -222,7 +226,6 @@ void main()
     //    suas distâncias para a câmera (desenhando primeiro objetos
     //    transparentes que estão mais longe da câmera).
     // Alpha default = 1 = 100% opaco = 0% transparente
-    color.a = 0.4;
 
     // Cor final do fragmento calculada com uma combinação dos termos difuso,
     // especular, e ambiente. Veja slide 129 do documento Aula_17_e_18_Modelos_de_Iluminacao.pdf.

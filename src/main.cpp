@@ -122,6 +122,8 @@ struct SceneObject
     size_t       num_indices; // Número de índices do objeto dentro do vetor indices[] definido em BuildTrianglesAndAddToVirtualScene()
     GLenum       rendering_mode; // Modo de rasterização (GL_TRIANGLES, GL_TRIANGLE_STRIP, etc.)
     GLuint       vertex_array_object_id; // ID do VAO onde estão armazenados os atributos do modelo
+    glm::vec3    bbox_min; // Axis-Aligned Bounding Box do objeto
+    glm::vec3    bbox_max;
 };
 
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
@@ -201,6 +203,8 @@ GLint g_model_uniform;
 GLint g_view_uniform;
 GLint g_projection_uniform;
 GLint g_object_id_uniform;
+GLint g_bbox_min_uniform;
+GLint g_bbox_max_uniform;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
@@ -212,8 +216,6 @@ bool a_pressed = false;
 bool s_pressed = false;
 bool shift_pressed = false; 
 bool space_pressed = false;
-
-
 
 bool projectile_fired = false;
 bool can_shoot = true;
@@ -247,7 +249,7 @@ int main(int argc, char* argv[])
     // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047 - 00550573 - Vicente Tolentino Isatto", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "SonicBoomba", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -291,56 +293,48 @@ int main(int argc, char* argv[])
     //
     LoadShadersFromFiles();
 
-    // Carregamos duas imagens para serem utilizadas como textura
-
-    // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/monster_texture.png"); // TextureImage0
+    LoadTextureImage("../../data/sonic_model/sonic_texture.png"); // TextureImage0
+    LoadTextureImage("../../data/robotnik_model/RobotnikFinal_Color.png"); // TextureImage1
+    LoadTextureImage("../../data/room_model/rocky_texture.jpg"); // TextureImage2
+    LoadTextureImage("../../data/environment_model/environment.png"); // TextureImage3
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel("../../data/sphere.obj");
+    ObjModel spheremodel("../../data/shape_model/sphere.obj");
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel("../../data/bunny.obj");
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
-
-    ObjModel floormodel("../../data/floor.obj");
+    ObjModel floormodel("../../data/room_model/floor.obj");
     ComputeNormals(&floormodel);
     BuildTrianglesAndAddToVirtualScene(&floormodel);
 
-    ObjModel east_wallmodel("../../data/east_wall.obj");
+    ObjModel east_wallmodel("../../data/room_model/east_wall.obj");
     ComputeNormals(&east_wallmodel);
     BuildTrianglesAndAddToVirtualScene(&east_wallmodel);
 
-    ObjModel west_wallmodel("../../data/west_wall.obj");
+    ObjModel west_wallmodel("../../data/room_model/west_wall.obj");
     ComputeNormals(&west_wallmodel);
     BuildTrianglesAndAddToVirtualScene(&west_wallmodel);
 
-    ObjModel north_wallmodel("../../data/north_wall.obj");
+    ObjModel north_wallmodel("../../data/room_model/north_wall.obj");
     ComputeNormals(&north_wallmodel);
     BuildTrianglesAndAddToVirtualScene(&north_wallmodel);
 
-    ObjModel south_wallmodel("../../data/south_wall.obj");
+    ObjModel south_wallmodel("../../data/room_model/south_wall.obj");
     ComputeNormals(&south_wallmodel);
     BuildTrianglesAndAddToVirtualScene(&south_wallmodel);
 
-    ObjModel cubemodel("../../data/cube.obj");
+    ObjModel cubemodel("../../data/shape_model/cube.obj");
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
 
-    ObjModel monstermdoel("../../data/monster.obj");
-    ComputeNormals(&monstermdoel);
-    BuildTrianglesAndAddToVirtualScene(&monstermdoel);
-
-    ObjModel sonicmodel("../../data/sonic.obj");
+    ObjModel sonicmodel("../../data/sonic_model/sonic.obj");
     ComputeNormals(&sonicmodel);
     BuildTrianglesAndAddToVirtualScene(&sonicmodel);
 
-    ObjModel robotnikmodel("../../data/robotnik.obj");
+    ObjModel robotnikmodel("../../data/robotnik_model/robotnik.obj");
     ComputeNormals(&robotnikmodel);
     BuildTrianglesAndAddToVirtualScene(&robotnikmodel);
-    ObjModel projectile("../../data/projectile.obj");
+    ObjModel projectile("../../data/projectile_model/projectile.obj");
     ComputeNormals(&projectile);
     BuildTrianglesAndAddToVirtualScene(&projectile);
 
@@ -450,15 +444,14 @@ int main(int argc, char* argv[])
         #define SOUTH_WALL  6
         #define HIT_SPHERE 7
         #define HIT_BOX 8
-        #define MONSTER 9
         #define SONIC 10
         #define ROBOTNIK 11
         #define PROJECTILE 12
 
-        // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-3.0f,-1.0f,0.0f)
-              * Matrix_Rotate_X(-1.57079632679489661923)
-              * Matrix_Scale(0.02f,0.02f,0.02f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        // Desenhamos o modelo do robotnik
         model = Matrix_Translate(-3.0f,-1.0f,0.0f)
               * Matrix_Rotate_X(-1.57079632679489661923)
               * Matrix_Scale(0.02f,0.02f,0.02f);
@@ -476,21 +469,8 @@ int main(int argc, char* argv[])
         DrawVirtualObject("Hands");
         DrawVirtualObject("ButtonLow1");
         DrawVirtualObject("ButtonLow2");
-        glUniform1i(g_object_id_uniform, ROBOTNIK);
-        DrawVirtualObject("ButtonLow3");
-        DrawVirtualObject("TeethTop");
-        DrawVirtualObject("HeadLow");
-        DrawVirtualObject("Mustache");
-        DrawVirtualObject("TeethBottom");
-        DrawVirtualObject("ButtonLow");
-        DrawVirtualObject("PantsLow");
-        DrawVirtualObject("ShirtLow");
-        DrawVirtualObject("GlassesLow3");
-        DrawVirtualObject("Hands");
-        DrawVirtualObject("ButtonLow1");
-        DrawVirtualObject("ButtonLow2");
 
-        // Desenhamos o modelo do coelho
+        // Desenhamos o modelo do sonic
         model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
               * Matrix_Rotate_Y(g_CameraTheta-3.0f)
               * Matrix_Rotate_X(-1.57079632679489661923)
@@ -502,9 +482,6 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SONIC);
         DrawVirtualObject("Sonic:CHR_NML_SNC1");
-        glUniform1i(g_object_id_uniform, SONIC);
-        DrawVirtualObject("Sonic:CHR_NML_SNC1");
-
 
         //desenhamos chão e paredes
         model = Matrix_Translate(0.0f,-1.0f,0.0f)
@@ -543,13 +520,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_south_wall");
 
 
-       
-
-
         // Objetos transparentes/ Hit boxes ===========================================================
-
-        // glEnable(GL_BLEND);
-        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // // Desenhamos o modelo da hit box do coelho
         // model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z);
@@ -637,6 +608,13 @@ void DrawVirtualObject(const char* object_name)
     // comentários detalhados dentro da definição de BuildTrianglesAndAddToVirtualScene().
     glBindVertexArray(g_VirtualScene[object_name].vertex_array_object_id);
 
+    // Setamos as variáveis "bbox_min" e "bbox_max" do fragment shader
+    // com os parâmetros da axis-aligned bounding box (AABB) do modelo.
+    glm::vec3 bbox_min = g_VirtualScene[object_name].bbox_min;
+    glm::vec3 bbox_max = g_VirtualScene[object_name].bbox_max;
+    glUniform4f(g_bbox_min_uniform, bbox_min.x, bbox_min.y, bbox_min.z, 1.0f);
+    glUniform4f(g_bbox_max_uniform, bbox_max.x, bbox_max.y, bbox_max.z, 1.0f);
+
     // Pedimos para a GPU rasterizar os vértices dos eixos XYZ
     // apontados pelo VAO como linhas. Veja a definição de
     // g_VirtualScene[""] dentro da função BuildTrianglesAndAddToVirtualScene(), e veja
@@ -694,6 +672,8 @@ void LoadShadersFromFiles()
     g_view_uniform       = glGetUniformLocation(g_GpuProgramID, "view"); // Variável da matriz "view" em shader_vertex.glsl
     g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection"); // Variável da matriz "projection" em shader_vertex.glsl
     g_object_id_uniform  = glGetUniformLocation(g_GpuProgramID, "object_id"); // Variável "object_id" em shader_fragment.glsl
+    g_bbox_min_uniform   = glGetUniformLocation(g_GpuProgramID, "bbox_min");
+    g_bbox_max_uniform   = glGetUniformLocation(g_GpuProgramID, "bbox_max");
 
     // Variáveis em "shader_fragment.glsl" para acesso das imagens de textura
     glUseProgram(g_GpuProgramID);
@@ -789,6 +769,12 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel* model)
         size_t first_index = indices.size();
         size_t num_triangles = model->shapes[shape].mesh.num_face_vertices.size();
 
+        const float minval = std::numeric_limits<float>::min();
+        const float maxval = std::numeric_limits<float>::max();
+
+        glm::vec3 bbox_min = glm::vec3(maxval,maxval,maxval);
+        glm::vec3 bbox_max = glm::vec3(minval,minval,minval);
+
         for (size_t triangle = 0; triangle < num_triangles; ++triangle)
         {
             assert(model->shapes[shape].mesh.num_face_vertices[triangle] == 3);
@@ -807,6 +793,13 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel* model)
                 model_coefficients.push_back( vy ); // Y
                 model_coefficients.push_back( vz ); // Z
                 model_coefficients.push_back( 1.0f ); // W
+
+                bbox_min.x = std::min(bbox_min.x, vx);
+                bbox_min.y = std::min(bbox_min.y, vy);
+                bbox_min.z = std::min(bbox_min.z, vz);
+                bbox_max.x = std::max(bbox_max.x, vx);
+                bbox_max.y = std::max(bbox_max.y, vy);
+                bbox_max.z = std::max(bbox_max.z, vz);
 
                 // Inspecionando o código da tinyobjloader, o aluno Bernardo
                 // Sulzbach (2017/1) apontou que a maneira correta de testar se
@@ -842,6 +835,9 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel* model)
         theobject.num_indices    = last_index - first_index + 1; // Número de indices
         theobject.rendering_mode = GL_TRIANGLES;       // Índices correspondem ao tipo de rasterização GL_TRIANGLES.
         theobject.vertex_array_object_id = vertex_array_object_id;
+
+        theobject.bbox_min = bbox_min;
+        theobject.bbox_max = bbox_max;
 
         g_VirtualScene[model->shapes[shape].name] = theobject;
     }
@@ -1598,7 +1594,7 @@ void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_directi
     animateProjectile(&projectile_position, projectile_direction, speed, delta_t); 
     // Desenha o projétil
     glm::mat4 model = Matrix_Translate(projectile_position.x, projectile_position.y, projectile_position.z)
-                    * Matrix_Scale(0.5f, 0.5f, 0.5f)
+                    * Matrix_Scale(0.8f, 0.8f, 0.8f)
                     * Matrix_Rotate_Y(proj_rotation)
                     * Matrix_Rotate_X(proj_rotation);
     glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));

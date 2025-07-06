@@ -1,7 +1,0 @@
-g the_north_wall
-v 1 1 0   // topo direita
-v -1 1 0  // topo esquerda
-v 1 0 0   // base direita
-v -1 0 0  // base esquerda
-f 1 2 3
-f 2 4 3
