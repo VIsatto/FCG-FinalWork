@@ -249,12 +249,15 @@ int main(int argc, char* argv[])
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
     window = glfwCreateWindow(800, 600, "INF01047 - 00550573 - Vicente Tolentino Isatto", NULL, NULL);
+    
     if (!window)
     {
         glfwTerminate();
         fprintf(stderr, "ERROR: glfwCreateWindow() failed.\n");
         std::exit(EXIT_FAILURE);
     }
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Definimos a função de callback que será chamada sempre que o usuário
     // pressionar alguma tecla do teclado ...
@@ -360,7 +363,7 @@ int main(int argc, char* argv[])
     glFrontFace(GL_CCW);
     
     float speed = 10.0f;
-    float proj_rotation= 90.0f;
+    float proj_rotation= 3.0f;
     float shoot_time = -1.0f; // Timer para controlar o tempo entre disparos do projétil
     float prev_time = (float)glfwGetTime();
 
@@ -397,10 +400,7 @@ int main(int argc, char* argv[])
         float y = r*sin(g_CameraPhi);
         float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
         float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
-        if (z_pressed) {
-            if (y < -0.66f) y = -0.66f;
-            if (y >  0.55f) y =  0.55f;
-}
+
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::vec4 camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
@@ -601,7 +601,7 @@ int main(int argc, char* argv[])
             glm::vec4 sonic_forward = glm::normalize(camera_view_vector);
 
             // Define a posição inicial do projétil um pouco à frente do coelho
-            float offset = 1.0f; // ajuste conforme necessário
+            float offset = 1.5f; // ajuste conforme necessário
             projectile_position = sonic_position + sonic_forward * offset;
 
             // Define a direção do projétil igual à direção do coelho
@@ -1148,6 +1148,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
     // parâmetros que definem a posição da câmera dentro da cena virtual.
     // Assim, temos que o usuário consegue controlar a câmera.
 
+    if(z_pressed) g_LeftMouseButtonPressed = true;
     if (g_LeftMouseButtonPressed)
     {
         // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
@@ -1155,12 +1156,23 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         float dy = ypos - g_LastCursorPosY;
     
         // Atualizamos parâmetros da câmera com os deslocamentos
+        if(!z_pressed){
         g_CameraTheta -= 0.01f*dx;
         g_CameraPhi   += 0.01f*dy;
-    
+        }
+        else{
+            g_CameraTheta -= 0.0025f*dx;
+            g_CameraPhi   -= 0.002f*dy;
+        }
         // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
-        float phimax = 3.141592f/2;
-        float phimin = -phimax;
+        float phimax, phimin;
+        if (!z_pressed) {
+            phimax = 3.141592f/2;
+            phimin = -phimax;
+        } else {
+            phimax = 0.6f;   // Limite superior menor
+            phimin = -0.5;  // Limite inferior menor
+        }
     
         if (g_CameraPhi > phimax)
             g_CameraPhi = phimax;
@@ -1282,6 +1294,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         if (action == GLFW_PRESS)
             // Usuário apertou a tecla SPACE, então atualizamos o estado para pressionada
             z_pressed = !z_pressed;
+            g_LeftMouseButtonPressed = false; // Desabilita o botão esquerdo do mouse quando Z é pressionado
     }
     
     
@@ -1527,7 +1540,7 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
 
     if (shift_pressed){
         // Se a tecla SHIFT estiver pressionada, aumentamos a velocidade
-        current_speed = speed * 2.5f;
+        current_speed = speed * 1.5f;
     }
         
     if (d_pressed)
@@ -1553,7 +1566,7 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     view = glm::vec4(view.x, 0.0f, view.z, 0.0f);
     view = view / norm(view);
 
-    float projectile_speed = speed * 2.0f;
+    float projectile_speed = speed * 3.0f;
 
     // Move o objeto na direção da visão apenas uma vez por chamada
     *object_position += view * projectile_speed * delta_t;
@@ -1616,12 +1629,13 @@ void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_directi
     // Desenha o projétil
     glm::mat4 model = Matrix_Translate(projectile_position.x, projectile_position.y, projectile_position.z)
                     * Matrix_Scale(0.5f, 0.5f, 0.5f)
-                    * Matrix_Rotate_Y(proj_rotation)
-                    * Matrix_Rotate_X(proj_rotation);
+                    * Matrix_Rotate_Y(proj_rotation *2.0f)
+                    * Matrix_Rotate_X(proj_rotation * 1.0f)
+                    * Matrix_Rotate_Z(proj_rotation * 3.0f);
     glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, PROJECTILE);
     DrawVirtualObject("the_projectile");
-    proj_rotation += 0.005f;
+    proj_rotation += 0.004f;
 
 
     // Checa distância e reseta se necessário
