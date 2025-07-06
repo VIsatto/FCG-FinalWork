@@ -179,7 +179,7 @@ bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mous
 // renderização.
 float g_CameraTheta = 3.0f; // Ângulo no plano ZX em relação ao eixo Z
 float g_CameraPhi = 0.5f;   // Ângulo em relação ao eixo Y
-float g_CameraDistance = 3.5f; // Distância da câmera para a origem
+float g_CameraDistance = 2.0f; // Distância da câmera para a origem
 
 // Variáveis que controlam rotação do antebraço
 float g_ForearmAngleZ = 0.0f;
@@ -210,6 +210,7 @@ bool d_pressed = false;
 bool w_pressed = false;
 bool a_pressed = false;
 bool s_pressed = false;
+bool z_pressed = false;
 bool shift_pressed = false; 
 bool space_pressed = false;
 
@@ -396,12 +397,21 @@ int main(int argc, char* argv[])
         float y = r*sin(g_CameraPhi);
         float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
         float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
-
+        if (z_pressed) {
+            if (y < -0.66f) y = -0.66f;
+            if (y >  0.55f) y =  0.55f;
+}
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::vec4 camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
         glm::vec4 camera_lookat_l    = sonic_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
+        if(z_pressed){
+            camera_view_vector *= -1.0;
+            g_CameraDistance = 1.0f;
+            
+
+        }
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
         
         //Abaixo definimos delta t para função de animação do objeto
@@ -1265,6 +1275,13 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         else if (action == GLFW_RELEASE)
             // Usuário largou a tecla SPACE, então atualizamos o estado para NÃO pressionada
             space_pressed = false;
+    }
+
+    if (key == GLFW_KEY_Z)
+    {
+        if (action == GLFW_PRESS)
+            // Usuário apertou a tecla SPACE, então atualizamos o estado para pressionada
+            z_pressed = !z_pressed;
     }
     
     
