@@ -160,7 +160,7 @@ bool ColisionAABB(const AABB& a, const AABB& b);
 bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
 bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<AABB> obj_aabbs);
 void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_time, float current_time, bool &projectile_fired, std::vector<Robotnik> enemies, float &proj_rotation);
-void ChaseSonic(float *robot_x, float *robot_z, glm::vec4 sonic_position, float speed, float delta_t, float *angle);
+void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float speed, float delta_t, int ind);
 
 void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count);
 void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 sonic_position, float speed, float delta_t);
@@ -1644,23 +1644,23 @@ void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_directi
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
 
-void ChaseSonic(float *robot_x, float *robot_z, glm::vec4 sonic_position, float speed, float delta_t, float *angle) {
+void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float speed, float delta_t, int ind) {
 
     //Calcula a direção do robotnik ao sonic e depois normaliza para descobrir o angulo para aplicar na matriz de rotação
-    glm::vec3 direction = glm::vec3(sonic_position.x - *robot_x, 0.0f, sonic_position.z - *robot_z);
+    glm::vec3 direction = glm::vec3(sonic_position.x - enemies[ind].position.x, 0.0f, sonic_position.z - enemies[ind].position.z);
     direction = glm::normalize(direction);
-    *angle = atan2(direction.x, direction.z); // atan2(x, z) para rotação em Y
+    enemies[ind].angle = atan2(direction.x, direction.z); // atan2(x, z) para rotação em Y
 
     // Atualiza a posição do robô com base na distância de Sonic
-    if( sonic_position.x < *robot_x - 2.0f) {
-        *robot_x -= speed * delta_t;
-    } else if (sonic_position.x > *robot_x + 2.0f) {
-        *robot_x += speed * delta_t;
+    if( sonic_position.x < enemies[ind].position.x - 2.0f) {
+        enemies[ind].position.x -= speed * delta_t;
+    } else if (sonic_position.x > enemies[ind].position.x + 2.0f) {
+        enemies[ind].position.x += speed * delta_t;
     }
-    if (sonic_position.z < *robot_z - 2.0f) {
-        *robot_z -= speed * delta_t;
-    } else if (sonic_position.z > *robot_z + 2.0f) {
-        *robot_z += speed * delta_t;
+    if (sonic_position.z < enemies[ind].position.z - 2.0f) {
+        enemies[ind].position.z -= speed * delta_t;
+    } else if (sonic_position.z > enemies[ind].position.z + 2.0f) {
+        enemies[ind].position.z += speed * delta_t;
     }
     
     
@@ -1672,7 +1672,7 @@ void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 son
 
     for (int i = 0; i < enemies.size(); i++) {
         
-        ChaseSonic(&enemies[i].position.x, &enemies[i].position.z, sonic_position, speed/3, delta_t, &enemies[i].angle);
+        ChaseSonic(enemies, sonic_position, speed/3, delta_t, i);
         enemies[i].aabb.min = glm::vec3(enemies[i].position.x - 1.0f, 0.0f - 1.0f, enemies[i].position.z - 1.0f);
         enemies[i].aabb.max = glm::vec3(enemies[i].position.x + 1.0f, 0.0f + 1.0f, enemies[i].position.z + 1.0f);
         model = Matrix_Translate(enemies[i].position.x,-1.0f,enemies[i].position.z)
@@ -1694,8 +1694,6 @@ void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 son
         DrawVirtualObject("ButtonLow1");
         DrawVirtualObject("ButtonLow2");
 
-
-
     }   
 
 }
@@ -1710,4 +1708,15 @@ void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count) {
         robot_x += 10.0f;
         robot_z += 15.0f;
     }
+}
+
+bool EnemyCollision(std::vector<Robotnik> &enemies, int ind) {
+    // Verifica colisão entre Sonic e os robôs
+    bool collision = false;
+    for (int i = 0; i < enemies.size(); i++) {
+        if(ind != i){
+            collision = ColisionAABB(enemies[ind].aabb, enemies[i].aabb);
+        }
+    }
+    return collision;
 }
