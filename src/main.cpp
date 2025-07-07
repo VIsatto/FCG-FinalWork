@@ -130,6 +130,14 @@ struct Robotnik{
     glm::vec4 position; // Posição do Robotnik
     float angle; // Ângulo de rotação do Robotnik
     AABB aabb;
+    int health = 3; // Número de vidas do Robotnik
+};
+
+struct Projectile {
+    glm::vec4 position; // Posição do projétil
+    glm::vec4 direction; // Direção do projétil
+    bool shot; // Velocidade do projétil
+    float rotation;
 };
 
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
@@ -158,8 +166,8 @@ void animateObject(glm::vec4* bunny_position, glm::vec4 view, float speed, float
 void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t);
 bool ColisionAABB(const AABB& a, const AABB& b);
 bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
-bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<AABB> obj_aabbs);
-void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_time, float current_time, bool &projectile_fired, std::vector<Robotnik> enemies, float &proj_rotation);
+bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<Robotnik> &enemies);
+void ProjectileFired(Projectile &proj, float speed, float delta_t, float shoot_time, float current_time, std::vector<Robotnik> &enemies);
 void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float speed, float delta_t, int ind);
 
 void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count);
@@ -228,11 +236,9 @@ bool z_pressed = false;
 bool shift_pressed = false; 
 bool space_pressed = false;
 
-bool projectile_fired = false;
-bool can_shoot = true;
 int screen_width = 800;
 int screen_height = 600;
-int enemy_count = 2; // Número de inimigos na cena
+int enemy_count = 3; // Número de inimigos na cena
 
 int main(int argc, char* argv[])
 {
@@ -369,8 +375,10 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
     
+    
+
+    
     float speed = 10.0f;
-    float proj_rotation= 3.0f;
     float shoot_time = -1.0f; // Timer para controlar o tempo entre disparos do projétil
     float prev_time = (float)glfwGetTime();
 
@@ -379,11 +387,12 @@ int main(int argc, char* argv[])
 
 
     glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-    glm::vec4 projectile_position;
-    glm::vec4 projectile_direction;
+    
     std::vector<Robotnik> enemies;
     enemies.resize(enemy_count);
 
+    Projectile proj;
+    proj.rotation = 3.0f;
 
     DefineRobotniks(enemies, enemy_count);
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
@@ -567,24 +576,24 @@ int main(int argc, char* argv[])
         }
 
         AABB projec_aabb;
-         if(space_pressed && !projectile_fired && current_time - shoot_time >= 1.0f ) {
+         if(space_pressed && !proj.shot && current_time - shoot_time >= 1.0f ) {
             // Calcula a direção normalizada do coelho (para onde ele está olhando)
             glm::vec4 sonic_forward = glm::normalize(camera_view_vector);
 
             // Define a posição inicial do projétil um pouco à frente do coelho
             float offset = 1.5f; // ajuste conforme necessário
-            projectile_position = sonic_position + sonic_forward * offset;
+            proj.position = sonic_position + sonic_forward * offset;
 
             // Define a direção do projétil igual à direção do coelho
-            projectile_direction = sonic_forward;
+            proj.direction = sonic_forward;
 
-            projectile_fired = true;
+            proj.shot = true;
             shoot_time = current_time;
         }
 
         
-        if (projectile_fired) 
-            ProjectileFired(projectile_position, projectile_direction, speed, delta_t, shoot_time, current_time, projectile_fired, enemies, proj_rotation);
+        if (proj.shot) 
+            ProjectileFired(proj, speed, delta_t, shoot_time, current_time, enemies);
         
 
         // O framebuffer onde OpenGL executa as operações de renderização não
@@ -1604,12 +1613,13 @@ bool WallsCollision(glm::vec4* obj_position, float obj_half_size){
     return collision;
 }
 
-bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<Robotnik> enemies) {
+bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<Robotnik> &enemies) {
     AABB projec_aabb;
     projec_aabb.min = glm::vec3(projectile_position.x - 1.0f, projectile_position.y - 1.0f, projectile_position.z - 1.0f);
     projec_aabb.max = glm::vec3(projectile_position.x + 1.0f, projectile_position.y + 1.0f, projectile_position.z + 1.0f);
     for(int i=0; i < enemies.size(); i++) {
         if (ColisionAABB(projec_aabb, enemies[i].aabb)) {
+            enemies[i].health -= 1; // Diminui a vida do inimigo
             return true;
         }
     }
@@ -1620,24 +1630,24 @@ bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_si
     return false;
 }
 
-void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_direction, float speed, float delta_t, float shoot_time, float current_time, bool &projectile_fired, std::vector<Robotnik> enemies, float &proj_rotation){
-    animateProjectile(&projectile_position, projectile_direction, speed, delta_t); 
+void ProjectileFired(Projectile &proj, float speed, float delta_t, float shoot_time, float current_time, std::vector<Robotnik> &enemies){
+    animateProjectile(&proj.position, proj.direction, speed, delta_t); 
     // Desenha o projétil
-    glm::mat4 model = Matrix_Translate(projectile_position.x, projectile_position.y, projectile_position.z)
+    glm::mat4 model = Matrix_Translate(proj.position.x, proj.position.y, proj.position.z)
                     * Matrix_Scale(0.5f, 0.5f, 0.5f)
-                    * Matrix_Rotate_Y(proj_rotation *2.0f)
-                    * Matrix_Rotate_X(proj_rotation * 1.0f)
-                    * Matrix_Rotate_Z(proj_rotation * 3.0f);
+                    * Matrix_Rotate_Y(proj.rotation *2.0f)
+                    * Matrix_Rotate_X(proj.rotation * 1.0f)
+                    * Matrix_Rotate_Z(proj.rotation * 3.0f);
     glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, PROJECTILE);
     DrawVirtualObject("the_projectile");
-    proj_rotation += 0.004f;
+    proj.rotation += 0.004f;
 
 
     // Checa distância e reseta se necessário
 
-    if (current_time - shoot_time > 1.0f || ProjectileCollision(projectile_position, 1.0f, enemies)) {
-        projectile_fired = false;
+    if (current_time - shoot_time > 1.0f || ProjectileCollision(proj.position, 1.0f, enemies)) {
+        proj.shot = false;
     }
 }
 
@@ -1652,15 +1662,33 @@ void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float 
     enemies[ind].angle = atan2(direction.x, direction.z); // atan2(x, z) para rotação em Y
 
     // Atualiza a posição do robô com base na distância de Sonic
-    if( sonic_position.x < enemies[ind].position.x - 2.0f) {
-        enemies[ind].position.x -= speed * delta_t;
-    } else if (sonic_position.x > enemies[ind].position.x + 2.0f) {
-        enemies[ind].position.x += speed * delta_t;
+    if( sonic_position.x < enemies[ind].position.x - 3.0f) {
+        for(int i = 0; i < enemies.size(); i++) {
+            if (i != ind) {
+                if (glm::length(glm::vec3(enemies[i].position.x - enemies[ind].position.x, 0.0f, enemies[i].position.z - enemies[ind].position.z)) > 2.0f)  enemies[ind].position.x -= speed * delta_t;
+            }
+        }
+        
+    } else if (sonic_position.x > enemies[ind].position.x + 3.0f) {
+        for(int i = 0; i < enemies.size(); i++) {
+            if (i != ind) {
+                if (glm::length(glm::vec3(enemies[i].position.x - enemies[ind].position.x, 0.0f, enemies[i].position.z - enemies[ind].position.z)) > 2.0f)  enemies[ind].position.x += speed * delta_t;
+            }
+        }
     }
-    if (sonic_position.z < enemies[ind].position.z - 2.0f) {
-        enemies[ind].position.z -= speed * delta_t;
-    } else if (sonic_position.z > enemies[ind].position.z + 2.0f) {
-        enemies[ind].position.z += speed * delta_t;
+    if (sonic_position.z < enemies[ind].position.z - 3.0f) {
+        for(int i = 0; i < enemies.size(); i++) {
+            if (i != ind) {
+                if (glm::length(glm::vec3(enemies[i].position.x - enemies[ind].position.x, 0.0f, enemies[i].position.z - enemies[ind].position.z)) > 2.0f)  enemies[ind].position.z -= speed * delta_t;
+            }
+        }
+        
+    } else if (sonic_position.z > enemies[ind].position.z + 3.0f) {
+        for(int i = 0; i < enemies.size(); i++) {
+            if (i != ind) {
+                if (glm::length(glm::vec3(enemies[i].position.x - enemies[ind].position.x, 0.0f, enemies[i].position.z - enemies[ind].position.z)) > 2.0f)  enemies[ind].position.z += speed * delta_t;
+            }
+        }
     }
     
     
@@ -1671,8 +1699,8 @@ void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float 
 void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 sonic_position, float speed, float delta_t) {
 
     for (int i = 0; i < enemies.size(); i++) {
-        
-        ChaseSonic(enemies, sonic_position, speed/3, delta_t, i);
+        if(enemies[i].health !=0){
+             ChaseSonic(enemies, sonic_position, speed/4, delta_t, i);
         enemies[i].aabb.min = glm::vec3(enemies[i].position.x - 1.0f, 0.0f - 1.0f, enemies[i].position.z - 1.0f);
         enemies[i].aabb.max = glm::vec3(enemies[i].position.x + 1.0f, 0.0f + 1.0f, enemies[i].position.z + 1.0f);
         model = Matrix_Translate(enemies[i].position.x,-1.0f,enemies[i].position.z)
@@ -1693,7 +1721,13 @@ void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 son
         DrawVirtualObject("Hands");
         DrawVirtualObject("ButtonLow1");
         DrawVirtualObject("ButtonLow2");
-
+        }
+        else{
+            enemies[i].position = glm::vec4(100.0f, -1.0f, 100.0f, 1.0f); // Coloca o robô fora da tela
+            enemies[i].aabb.min = glm::vec3(-100.0f, -100.0f, -100.0f);
+            enemies[i].aabb.max = glm::vec3(-100.0f, -100.0f, -100.0f);
+            enemies[i].angle = 0.0f; // Reseta o ângulo
+        }
     }   
 
 }
@@ -1710,13 +1744,3 @@ void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count) {
     }
 }
 
-bool EnemyCollision(std::vector<Robotnik> &enemies, int ind) {
-    // Verifica colisão entre Sonic e os robôs
-    bool collision = false;
-    for (int i = 0; i < enemies.size(); i++) {
-        if(ind != i){
-            collision = ColisionAABB(enemies[ind].aabb, enemies[i].aabb);
-        }
-    }
-    return collision;
-}
