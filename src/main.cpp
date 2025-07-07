@@ -179,8 +179,8 @@ bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mous
 // usuário através do mouse (veja função CursorPosCallback()). A posição
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
 // renderização.
-float g_CameraTheta = 3.0f; // Ângulo no plano ZX em relação ao eixo Z
-float g_CameraPhi = 0.5f;   // Ângulo em relação ao eixo Y
+float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
+float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
 float g_CameraDistance = 2.0f; // Distância da câmera para a origem
 
 // Variáveis que controlam rotação do antebraço
@@ -258,8 +258,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "ERROR: glfwCreateWindow() failed.\n");
         std::exit(EXIT_FAILURE);
     }
-
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Definimos a função de callback que será chamada sempre que o usuário
     // pressionar alguma tecla do teclado ...
@@ -397,16 +395,19 @@ int main(int argc, char* argv[])
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l    = sonic_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
-        if(z_pressed){
-            camera_view_vector *= -1.0;
-            g_CameraDistance = 1.0f;
-            
+        glm::vec4 camera_position_c; // Ponto "c", centro da câmera
+        glm::vec4 camera_lookat_l = sonic_position; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        glm::vec4 camera_view_vector; // Vetor "view", sentido para onde a câmera está virada
 
+        if(!z_pressed){
+            camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f);
+            camera_view_vector = camera_lookat_l - camera_position_c; 
+        }else{
+            camera_position_c = sonic_position + glm::vec4(0.0f,1.0f,0.0f,0.0f);
+            camera_view_vector = -glm::vec4(x,y,z,0.0f);
         }
-        glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+
+        glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.3f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
         
         //Abaixo definimos delta t para função de animação do objeto
         float current_time = (float)glfwGetTime();
@@ -418,7 +419,10 @@ int main(int argc, char* argv[])
         animateObject(&sonic_position, camera_view_vector, speed, delta_t);
         WallsCollision(&sonic_position);
 
-        camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f); // Ponto "c", centro da câmera
+        if(!z_pressed)
+        camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f);
+        else camera_position_c = sonic_position + glm::vec4(0.0f,1.3f,0.0f,0.0f);
+            
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
@@ -482,11 +486,7 @@ int main(int argc, char* argv[])
 
         // Desenhamos o modelo do sonic
         model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
-              * Matrix_Rotate_Y(g_CameraTheta-3.0f)
-              * Matrix_Rotate_X(-1.57079632679489661923)
-              * Matrix_Scale(0.2f,0.2f,0.2f);
-        model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
-              * Matrix_Rotate_Y(g_CameraTheta-3.0f)
+              * Matrix_Rotate_Y(g_CameraTheta-3.14159265358979323846f)
               * Matrix_Rotate_X(-1.57079632679489661923)
               * Matrix_Scale(0.2f,0.2f,0.2f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
@@ -1144,44 +1144,41 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
     // parâmetros que definem a posição da câmera dentro da cena virtual.
     // Assim, temos que o usuário consegue controlar a câmera.
 
-    if(z_pressed) g_LeftMouseButtonPressed = true;
-    if (g_LeftMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
-    
-        // Atualizamos parâmetros da câmera com os deslocamentos
-        if(!z_pressed){
-        g_CameraTheta -= 0.01f*dx;
-        g_CameraPhi   += 0.01f*dy;
-        }
-        else{
-            g_CameraTheta -= 0.0025f*dx;
-            g_CameraPhi   -= 0.002f*dy;
-        }
-        // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
-        float phimax, phimin;
-        if (!z_pressed) {
-            phimax = 3.141592f/2;
-            phimin = -phimax;
-        } else {
-            phimax = 0.6f;   // Limite superior menor
-            phimin = -0.5;  // Limite inferior menor
-        }
-    
-        if (g_CameraPhi > phimax)
-            g_CameraPhi = phimax;
-    
-        if (g_CameraPhi < phimin)
-            g_CameraPhi = phimin;
-    
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
+    if (!g_LeftMouseButtonPressed)
+        return;
+
+    // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
+    float dx = xpos - g_LastCursorPosX;
+    float dy = ypos - g_LastCursorPosY;
+
+    // Atualizamos parâmetros da câmera com os deslocamentos
+    g_CameraTheta -= 0.01f*dx;
+    g_CameraPhi   += 0.01f*dy;
+
+    float phimax;
+    float phimin;
+
+    // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
+    if(z_pressed){
+        phimax = 3.141592f/2;
+        phimin = -phimax;
+    }else{
+        phimax = 3.141592f/3;
+        phimin = 0.0f;
     }
+
+    if (g_CameraPhi > phimax)
+        g_CameraPhi = phimax;
+
+    if (g_CameraPhi < phimin)
+        g_CameraPhi = phimin;
+
+    // Atualizamos as variáveis globais para armazenar a posição atual do
+    // cursor como sendo a última posição conhecida do cursor.
+    g_LastCursorPosX = xpos;
+    g_LastCursorPosY = ypos;
 }
+
 
 // Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
@@ -1190,14 +1187,13 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     // movimentação da "rodinha", simulando um ZOOM.
     g_CameraDistance -= 0.5f*yoffset;
 
-    // Uma câmera look-at nunca pode estar exatamente "em cima" do ponto para
-    // onde ela está olhando, pois isto gera problemas de divisão por zero na
-    // definição do sistema de coordenadas da câmera. Isto é, a variável abaixo
-    // nunca pode ser zero. Versões anteriores deste código possuíam este bug,
-    // o qual foi detectado pelo aluno Vinicius Fraga (2017/2).
-    const float verysmallnumber = std::numeric_limits<float>::epsilon();
-    if (g_CameraDistance < verysmallnumber)
-        g_CameraDistance = verysmallnumber;
+
+    if (g_CameraDistance < 2.0f)
+        g_CameraDistance = 2.0f;
+
+    if (g_CameraDistance > 10.0f)
+        g_CameraDistance = 10.0f;
+
 }
 
 // Definição da função que será chamada sempre que o usuário pressionar alguma
@@ -1555,9 +1551,9 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
         // Se a tecla S estiver pressionada, movemos o objeto para trás
         *object_position -= view * current_speed * delta_t;
     
-    }
+}
 
-    void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t)
+void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t)
 {
     view = glm::vec4(view.x, 0.0f, view.z, 0.0f);
     view = view / norm(view);
@@ -1567,6 +1563,7 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     // Move o objeto na direção da visão apenas uma vez por chamada
     *object_position += view * projectile_speed * delta_t;
 }
+
 bool ColisionAABB(const AABB& a, const AABB& b) {
     // Verifica se há sobreposição em cada eixo
     bool over_X = (a.min.x <= b.max.x && a.max.x >= b.min.x);
@@ -1640,6 +1637,3 @@ void ProjectileFired(glm::vec4 &projectile_position,glm::vec4 projectile_directi
         projectile_fired = false;
     }
 }
-
-// set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
-// vim: set spell spelllang=pt_br :
