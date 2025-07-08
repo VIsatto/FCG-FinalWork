@@ -50,6 +50,9 @@
 #include "utils.h"
 #include "matrices.h"
 
+#include "Collision/collision.h"
+#include "Structures/structures.h"
+#include "Constants/constants.h"
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
 struct ObjModel
@@ -108,11 +111,6 @@ struct ObjModel
     }
 };
 
-struct AABB {
-    glm::vec3 min;
-    glm::vec3 max;
-};
-
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
 struct SceneObject
@@ -124,20 +122,6 @@ struct SceneObject
     GLuint       vertex_array_object_id; // ID do VAO onde estão armazenados os atributos do modelo
     glm::vec3    bbox_min; // Axis-Aligned Bounding Box do objeto
     glm::vec3    bbox_max;
-};
-
-struct Robotnik{
-    glm::vec4 position; // Posição do Robotnik
-    float angle; // Ângulo de rotação do Robotnik
-    AABB aabb;
-    int health = 3; // Número de vidas do Robotnik
-};
-
-struct Projectile {
-    glm::vec4 position; // Posição do projétil
-    glm::vec4 direction; // Direção do projétil
-    bool shot; // Velocidade do projétil
-    float rotation;
 };
 
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
@@ -164,9 +148,9 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void LoadTextureImage(const char* filename);
 void animateObject(glm::vec4* bunny_position, glm::vec4 view, float speed, float delta_t);
 void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t);
-bool ColisionAABB(const AABB& a, const AABB& b);
-bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
-bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<Robotnik> &enemies);
+// bool ColisionAABB(const AABB& a, const AABB& b);
+// bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
+// bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<Robotnik> &enemies);
 void ProjectileFired(Projectile &proj, float speed, float delta_t, float shoot_time, float current_time, std::vector<Robotnik> &enemies);
 void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float speed, float delta_t, int ind);
 
@@ -478,19 +462,6 @@ int main(int argc, char* argv[])
         // efetivamente aplicadas em todos os pontos.
         glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
-
-        #define SPHERE 0
-        #define BUNNY  1
-        #define FLOOR  2
-        #define EAST_WALL  3
-        #define WEST_WALL  4
-        #define NORTH_WALL  5
-        #define SOUTH_WALL  6
-        #define HIT_SPHERE 7
-        #define HIT_BOX 8
-        #define SONIC 10
-        #define ROBOTNIK 11
-        #define PROJECTILE 12
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1576,59 +1547,6 @@ void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, 
     *object_position += view * projectile_speed * delta_t;
 }
 
-bool ColisionAABB(const AABB& a, const AABB& b) {
-    // Verifica se há sobreposição em cada eixo
-    bool over_X = (a.min.x <= b.max.x && a.max.x >= b.min.x);
-    bool over_Y = (a.min.y <= b.max.y && a.max.y >= b.min.y);
-    bool over_Z = (a.min.z <= b.max.z && a.max.z >= b.min.z);
-
-    // Se houver sobreposição em TODOS os eixos, há colisão
-    return over_X && over_Y && over_Z;
-}
-
-bool WallsCollision(glm::vec4* obj_position, float obj_half_size){
-    // Limites do ambiente (ajuste conforme necessário)
-    bool collision = false;
-    float min_x = -50.0f + obj_half_size;
-    float max_x =  50.0f - obj_half_size;
-    float min_z = -50.0f + obj_half_size;
-    float max_z =  50.0f - obj_half_size;
-
-    // Checa e corrige colisão com as paredes
-    if (obj_position->x < min_x) {
-        obj_position->x = min_x;
-        collision = true;
-    }
-    if (obj_position->x > max_x) {
-        obj_position->x = max_x;
-        collision = true;
-    }
-    if (obj_position->z < min_z) {
-        obj_position->z = min_z;
-        collision = true;}
-    if (obj_position->z > max_z) {
-        obj_position->z = max_z;
-        collision = true;
-    }
-    return collision;
-}
-
-bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<Robotnik> &enemies) {
-    AABB projec_aabb;
-    projec_aabb.min = glm::vec3(projectile_position.x - 1.0f, projectile_position.y - 1.0f, projectile_position.z - 1.0f);
-    projec_aabb.max = glm::vec3(projectile_position.x + 1.0f, projectile_position.y + 1.0f, projectile_position.z + 1.0f);
-    for(int i=0; i < enemies.size(); i++) {
-        if (ColisionAABB(projec_aabb, enemies[i].aabb)) {
-            enemies[i].health -= 1; // Diminui a vida do inimigo
-            return true;
-        }
-    }
-    if (WallsCollision(&projectile_position, projectile_half_size)) {
-        // Se a colisão for com as paredes, retornamos false
-        return true;
-    }
-    return false;
-}
 
 void ProjectileFired(Projectile &proj, float speed, float delta_t, float shoot_time, float current_time, std::vector<Robotnik> &enemies){
     animateProjectile(&proj.position, proj.direction, speed, delta_t); 
