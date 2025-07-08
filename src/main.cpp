@@ -53,6 +53,7 @@
 #include "Collision/collision.h"
 #include "Structures/structures.h"
 #include "Constants/constants.h"
+#include "Bezier/bezier.h"
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
 struct ObjModel
@@ -1656,5 +1657,4 @@ void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count) {
         robot_z += 15.0f;
     }
 }
-
 

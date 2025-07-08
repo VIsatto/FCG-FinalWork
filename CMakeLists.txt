@@ -12,6 +12,7 @@ set(SOURCES
   src/glad.c
   src/stb_image.cpp
   src/Collision/collision.cpp
+  src/Bezier/bezier.cpp
 
 )
 
