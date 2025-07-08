@@ -1510,7 +1510,7 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     view = view / norm(view);
 
     glm::vec4 left_dir = crossproduct(view, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-    left_dir = left_dir/norm(left_dir);
+    left_dir = left_dir/glm::normalize(left_dir);
 
     float current_speed = speed;
 
@@ -1540,7 +1540,7 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
 void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t)
 {
     view = glm::vec4(view.x, 0.0f, view.z, 0.0f);
-    view = view / norm(view);
+    view = view / glm::normalize(view);
 
     float projectile_speed = speed * 3.0f;
 
