@@ -13,6 +13,7 @@ set(SOURCES
   src/stb_image.cpp
   src/Collision/collision.cpp
   src/Bezier/bezier.cpp
+  src/Rings/rings.cpp
 
 )
 

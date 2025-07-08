@@ -54,6 +54,7 @@
 #include "Structures/structures.h"
 #include "Constants/constants.h"
 #include "Bezier/bezier.h"
+#include "Rings/rings.h"
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
 struct ObjModel
@@ -158,9 +159,6 @@ void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float 
 void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count);
 void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 sonic_position, float speed, float delta_t);
 
-
-Rings CreateRing(std::vector<glm::vec4> control_points);
-std::vector<Rings> InicializeRings();
 void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm::mat4 &model);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -1668,52 +1666,7 @@ void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count) {
     }
 }
 
-Rings CreateRing(std::vector<glm::vec4> control_points) {
-    Rings ring;
-    ring.current_position = control_points[0];
-    ring.curve_positions = BezierCurve(control_points);
-    ring.animation_ind = 0.0f; 
-    ring.angle_rot = 0.0f;
-    return ring;
-}
 
-std::vector<Rings> InicializeRings(){
-
-    std::vector<Rings> all_rings;
-    std::vector<glm::vec4> control_points;
-
-    control_points.push_back(glm::vec4(30.0f, 15.0f, 30.0f, 1.0f));
-    control_points.push_back(glm::vec4(15.0f, 15.0f, 20.0f, 1.0f));
-    control_points.push_back(glm::vec4(25.0f, 15.0f, 40.0f, 1.0f));
-    control_points.push_back(glm::vec4(30.0f, 15.0f, 30.0f, 1.0f));
-    all_rings.push_back(CreateRing(control_points));
-    control_points.clear();
-
-    control_points.push_back(glm::vec4(-30.0f, 15.0f, 30.0f, 1.0f));
-    control_points.push_back(glm::vec4(-20.0f, 15.0f, 15.0f, 1.0f));
-    control_points.push_back(glm::vec4(-40.0f, 15.0f, 25.0f, 1.0f));
-    control_points.push_back(glm::vec4(-30.0f, 15.0f, 30.0f, 1.0f));
-    all_rings.push_back(CreateRing(control_points));
-    control_points.clear();
-
-
-    control_points.push_back(glm::vec4(30.0f, 15.0f, -30.0f, 1.0f));
-    control_points.push_back(glm::vec4(15.0f, 15.0f, -20.0f, 1.0f));
-    control_points.push_back(glm::vec4(25.0f, 15.0f, -40.0f, 1.0f));
-    control_points.push_back(glm::vec4(30.0f, 15.0f, -30.0f, 1.0f));
-    all_rings.push_back(CreateRing(control_points));
-    control_points.clear();
-
-    control_points.push_back(glm::vec4(-30.0f, 15.0f, -30.0f, 1.0f));
-    control_points.push_back(glm::vec4(-15.0f, 15.0f, -20.0f, 1.0f));
-    control_points.push_back(glm::vec4(-25.0f, 15.0f, -40.0f, 1.0f));
-    control_points.push_back(glm::vec4(-30.0f, 15.0f, -30.0f, 1.0f));
-    all_rings.push_back(CreateRing(control_points));
-    control_points.clear();
-
-
-    return all_rings;
-}
  //Função feita pelo Gemini com algumas alterações minhas (IA)
 void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm::mat4 &model) {
    
