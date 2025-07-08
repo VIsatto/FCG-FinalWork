@@ -160,6 +160,7 @@ void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count);
 void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 sonic_position, float speed, float delta_t);
 
 void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm::mat4 &model);
+void EraseEnemy(Robotnik &enemy);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -574,9 +575,10 @@ int main(int argc, char* argv[])
             shoot_time = current_time;
         }
 
-        
-        if (proj.shot) 
+        if (proj.shot){
             ProjectileFired(proj, speed, delta_t, shoot_time, current_time, enemies);
+        } 
+           
         
 
         // O framebuffer onde OpenGL executa as operações de renderização não
@@ -1569,13 +1571,9 @@ void ProjectileFired(Projectile &proj, float speed, float delta_t, float shoot_t
     glUniform1i(g_object_id_uniform, PROJECTILE);
     DrawVirtualObject("the_projectile");
     proj.rotation += 0.004f;
-
-
-    // Checa distância e reseta se necessário
-
-    if (current_time - shoot_time > 1.0f || ProjectileCollision(proj.position, 1.0f, enemies)) {
+    
+    if (current_time - shoot_time > 1.0f || ProjectileCollision(proj.position, 1.0f, enemies)) 
         proj.shot = false;
-    }
 }
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
@@ -1645,10 +1643,7 @@ void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 son
         DrawVirtualObject("ButtonLow2");
         }
         else{
-            enemies[i].position = glm::vec4(100.0f, -1.0f, 100.0f, 1.0f); // Coloca o robô fora da tela
-            enemies[i].aabb.min = glm::vec3(-100.0f, -100.0f, -100.0f);
-            enemies[i].aabb.max = glm::vec3(-100.0f, -100.0f, -100.0f);
-            enemies[i].angle = 0.0f; // Reseta o ângulo
+            EraseEnemy(enemies[i]);
         }
     }   
 
@@ -1698,3 +1693,13 @@ void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm
     }
     
 }
+
+void EraseEnemy(Robotnik &enemy){
+    
+    enemy.position = glm::vec4(100.0f, -1.0f, 100.0f, 1.0f); // Coloca o robô fora da tela
+    enemy.aabb.min = glm::vec3(-100.0f, -100.0f, -100.0f);
+    enemy.aabb.max = glm::vec3(-100.0f, -100.0f, -100.0f);
+    enemy.angle = 0.0f;
+    }
+
+

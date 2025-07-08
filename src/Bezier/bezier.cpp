@@ -11,7 +11,7 @@ std::vector<glm::vec4> BezierCurve(std::vector<glm::vec4> ctrl_points) {
     }
     
     for(int i =0; i< values; i++){
-        t_values.push_back(i);
+        t_values.push_back(static_cast<float>(i));
     }
     for (int i = 0; i < t_values.size(); i++) {
         t_values[i] /= (values - 1); // Normaliza os valores de t entre 0 e 1
