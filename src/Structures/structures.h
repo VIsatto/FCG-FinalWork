@@ -25,5 +25,11 @@ struct Projectile {
     float rotation;
 };
 
+struct Rings{
+    std::vector<glm::vec4> curve_positions; // Posições dos anéis
+    glm::vec4 current_position;
+    float animation_ind; // Posição do anel
+    float angle_rot;
+};
 
 #endif // _STRUCTURES_H

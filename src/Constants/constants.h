@@ -13,7 +13,7 @@
 #define SONIC 10
 #define ROBOTNIK 11
 #define PROJECTILE 12
-
+#define M_PI 3.14159265358979323846f
 
 
 #endif // _CONSTANTS_H

@@ -158,6 +158,11 @@ void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float 
 void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count);
 void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 sonic_position, float speed, float delta_t);
 
+
+Rings CreateRing(std::vector<glm::vec4> control_points);
+std::vector<Rings> InicializeRings();
+void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm::mat4 &model);
+
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
 // A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
@@ -367,7 +372,8 @@ int main(int argc, char* argv[])
 
 
 
-
+    std::vector<Rings> all_rings = InicializeRings();
+    all_rings.resize(4);
 
     glm::vec4 sonic_position = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     
@@ -449,7 +455,7 @@ int main(int argc, char* argv[])
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -80.0f; // Posição do "far plane"
+        float farplane  = -100.0f; // Posição do "far plane"
 
         // Projeção Perspectiva.
         // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
@@ -481,39 +487,43 @@ int main(int argc, char* argv[])
 
         //desenhamos chão e paredes
         model = Matrix_Translate(0.0f,-1.0f,0.0f)
-                * Matrix_Scale(50.0f, 1.0f, 50.0f);
+                * Matrix_Scale(100.0f, 1.0f, 100.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, FLOOR);
         DrawVirtualObject("the_floor");
 
-        model = Matrix_Translate(50.0f,-1.0f,0.0f)
-                * Matrix_Scale(1.0f, 20.0f, 50.0f);
+        model = Matrix_Translate(100.0f,-1.0f,0.0f)
+                * Matrix_Scale(1.0f, 20.0f, 100.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, EAST_WALL);
         DrawVirtualObject("the_east_wall");
 
-        model = Matrix_Translate(-50.0f,-1.0f,0.0f)
-                * Matrix_Scale(1.0f, 20.0f, 50.0f);
+        model = Matrix_Translate(-100.0f,-1.0f,0.0f)
+                * Matrix_Scale(1.0f, 20.0f, 100.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, WEST_WALL);
         DrawVirtualObject("the_west_wall");
 
-        model = Matrix_Translate(0.0f,-1.0f, -50.0f)
-                * Matrix_Scale(50.0f, 20.0f, 1.0f);
+        model = Matrix_Translate(0.0f,-1.0f, -100.0f)
+                * Matrix_Scale(100.0f, 20.0f, 1.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, NORTH_WALL);
         DrawVirtualObject("the_north_wall");
 
-        model = Matrix_Translate(0.0f,-1.0f,50.0f)
-                * Matrix_Scale(50.0f, 20.0f, 1.0f);
+        model = Matrix_Translate(0.0f,-1.0f,100.0f)
+                * Matrix_Scale(100.0f, 20.0f, 1.0f);
         
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SOUTH_WALL);
         DrawVirtualObject("the_south_wall");
+
+
+        AnimateRings(all_rings,speed*5,delta_t, model);
+        
 
 
         // Objetos transparentes/ Hit boxes ===========================================================
@@ -1510,7 +1520,7 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     view = view / norm(view);
 
     glm::vec4 left_dir = crossproduct(view, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
-    left_dir = left_dir/glm::normalize(left_dir);
+    left_dir = left_dir/norm(left_dir);
 
     float current_speed = speed;
 
@@ -1540,7 +1550,7 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
 void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t)
 {
     view = glm::vec4(view.x, 0.0f, view.z, 0.0f);
-    view = view / glm::normalize(view);
+    view = view / norm(view);
 
     float projectile_speed = speed * 3.0f;
 
@@ -1658,3 +1668,80 @@ void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count) {
     }
 }
 
+Rings CreateRing(std::vector<glm::vec4> control_points) {
+    Rings ring;
+    ring.current_position = control_points[0];
+    ring.curve_positions = BezierCurve(control_points);
+    ring.animation_ind = 0.0f; 
+    ring.angle_rot = 0.0f;
+    return ring;
+}
+
+std::vector<Rings> InicializeRings(){
+
+    std::vector<Rings> all_rings;
+    std::vector<glm::vec4> control_points;
+
+    control_points.push_back(glm::vec4(30.0f, 15.0f, 30.0f, 1.0f));
+    control_points.push_back(glm::vec4(15.0f, 15.0f, 20.0f, 1.0f));
+    control_points.push_back(glm::vec4(25.0f, 15.0f, 40.0f, 1.0f));
+    control_points.push_back(glm::vec4(30.0f, 15.0f, 30.0f, 1.0f));
+    all_rings.push_back(CreateRing(control_points));
+    control_points.clear();
+
+    control_points.push_back(glm::vec4(-30.0f, 15.0f, 30.0f, 1.0f));
+    control_points.push_back(glm::vec4(-20.0f, 15.0f, 15.0f, 1.0f));
+    control_points.push_back(glm::vec4(-40.0f, 15.0f, 25.0f, 1.0f));
+    control_points.push_back(glm::vec4(-30.0f, 15.0f, 30.0f, 1.0f));
+    all_rings.push_back(CreateRing(control_points));
+    control_points.clear();
+
+
+    control_points.push_back(glm::vec4(30.0f, 15.0f, -30.0f, 1.0f));
+    control_points.push_back(glm::vec4(15.0f, 15.0f, -20.0f, 1.0f));
+    control_points.push_back(glm::vec4(25.0f, 15.0f, -40.0f, 1.0f));
+    control_points.push_back(glm::vec4(30.0f, 15.0f, -30.0f, 1.0f));
+    all_rings.push_back(CreateRing(control_points));
+    control_points.clear();
+
+    control_points.push_back(glm::vec4(-30.0f, 15.0f, -30.0f, 1.0f));
+    control_points.push_back(glm::vec4(-15.0f, 15.0f, -20.0f, 1.0f));
+    control_points.push_back(glm::vec4(-25.0f, 15.0f, -40.0f, 1.0f));
+    control_points.push_back(glm::vec4(-30.0f, 15.0f, -30.0f, 1.0f));
+    all_rings.push_back(CreateRing(control_points));
+    control_points.clear();
+
+
+    return all_rings;
+}
+ //Função feita pelo Gemini com algumas alterações minhas (IA)
+void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm::mat4 &model) {
+   
+    for (int i = 0; i < all_rings.size(); i++) {
+        Rings &ring = all_rings[i];
+
+        float inc_index = speed * delta_t;
+
+        ring.animation_ind += inc_index;
+
+    
+        while (ring.animation_ind >= static_cast<float>(ring.curve_positions.size())) {
+            ring.animation_ind -= static_cast<float>(ring.curve_positions.size());
+        }
+
+        
+        ring.current_position = ring.curve_positions[static_cast<int>(ring.animation_ind)];
+
+        
+        model = Matrix_Translate(ring.current_position.x,10.0f,ring.current_position.z)
+                * Matrix_Scale(6.0f, 6.0f, 6.0f)
+                * Matrix_Rotate_Y(M_PI/2.0f + ring.angle_rot * 2.0f)
+                * Matrix_Rotate_X(M_PI/2.0f + ring.angle_rot)
+                * Matrix_Rotate_Z(M_PI/2.0f + ring.angle_rot * 3.0f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, PROJECTILE);
+        DrawVirtualObject("the_projectile");
+        ring.angle_rot += 0.00025;
+    }
+    
+}

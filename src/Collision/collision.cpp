@@ -15,10 +15,10 @@ bool ColisionAABB(const AABB& a, const AABB& b) {
 bool WallsCollision(glm::vec4* obj_position, float obj_half_size){
     // Limites do ambiente (ajuste conforme necessário)
     bool collision = false;
-    float min_x = -50.0f + obj_half_size;
-    float max_x =  50.0f - obj_half_size;
-    float min_z = -50.0f + obj_half_size;
-    float max_z =  50.0f - obj_half_size;
+    float min_x = -100.0f + obj_half_size;
+    float max_x =  100.0f - obj_half_size;
+    float min_z = -100.0f + obj_half_size;
+    float max_z =  100.0f - obj_half_size;
 
     // Checa e corrige colisão com as paredes
     if (obj_position->x < min_x) {
