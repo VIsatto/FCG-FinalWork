@@ -373,6 +373,7 @@ int main(int argc, char* argv[])
     float shoot_time = -1.0f; // Timer para controlar o tempo entre disparos do projétil
     float prev_time = (float)glfwGetTime(); //Variável para calcular o delta t
 
+    bool terminate = false;
 
 
     std::vector<Rings> all_rings = InicializeRings();
@@ -385,10 +386,10 @@ int main(int argc, char* argv[])
 
     Projectile proj;
     proj.rotation = 3.0f;
-
+    
     DefineRobotniks(enemies, enemy_count);
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window) && terminate !=true)
     {
         // Aqui executamos as operações de renderização
 
@@ -586,8 +587,12 @@ int main(int argc, char* argv[])
         // definidas anteriormente usando glfwSet*Callback() serão chamadas
         // pela biblioteca GLFW.
         glfwPollEvents();
-    }
+        terminate = true;
+        for(int i = 0; i< enemies.size(); i++)
+            if(enemies[i].health!=0) terminate = false;
 
+    }
+    
     // Finalizamos o uso dos recursos do sistema operacional
     glfwTerminate();
 
