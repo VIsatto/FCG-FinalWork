@@ -565,7 +565,7 @@ int main(int argc, char* argv[])
 
             // Define a posição inicial do projétil um pouco à frente do coelho
             float offset = 1.5f; // ajuste conforme necessário
-            proj.position = sonic_position + sonic_forward * offset;
+            proj.position = sonic_position + sonic_forward * offset + glm::vec4(0.0f,0.5f,0.0f,1.0f);
 
             // Define a direção do projétil igual à direção do coelho
             proj.direction = sonic_forward;
