@@ -1,7 +1,7 @@
 #include "collision.h"
 
 
-
+//Função para checagem de colisão AABB
 bool ColisionAABB(const AABB& a, const AABB& b) {
     // Verifica se há sobreposição em cada eixo
     bool over_X = (a.min.x <= b.max.x && a.max.x >= b.min.x);
@@ -11,7 +11,7 @@ bool ColisionAABB(const AABB& a, const AABB& b) {
     // Se houver sobreposição em TODOS os eixos, há colisão
     return over_X && over_Y && over_Z;
 }
-
+//Função para checagem de colisão com os muros
 bool WallsCollision(glm::vec4* obj_position, float obj_half_size){
     // Limites do ambiente (ajuste conforme necessário)
     bool collision = false;
@@ -38,30 +38,32 @@ bool WallsCollision(glm::vec4* obj_position, float obj_half_size){
     }
     return collision;
 }
-
+//Função de checagem da colisão do projétil
 bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<Robotnik> &enemies) {
+    //Instancia a AABB do projétil
     AABB projec_aabb;
     projec_aabb.min = glm::vec3(projectile_position.x - 1.0f, projectile_position.y - 1.0f, projectile_position.z - 1.0f);
     projec_aabb.max = glm::vec3(projectile_position.x + 1.0f, projectile_position.y + 1.0f, projectile_position.z + 1.0f);
     for(int i=0; i < enemies.size(); i++) {
+        //Caso tiver colisão com um inimigo, retornamos true
         if (ColisionAABB(projec_aabb, enemies[i].aabb)) {
             enemies[i].health -= 1; // Diminui a vida do inimigo
-            return true;
+            return true; 
         }
     }
+    // Se a colisão for com as paredes, retornamos true
     if (WallsCollision(&projectile_position, projectile_half_size)) {
-        // Se a colisão for com as paredes, retornamos false
         return true;
     }
     return false;
 }
 
-
+//Função de checagem de colisão de inimigos entre si
 bool EnemyColission(std::vector<Robotnik> &enemies, int ind) {
     bool collision = false;
     for (int i = 0; i < enemies.size(); i++) {
         if( i != ind && enemies[i].health != 0) 
             if (ColisionAABB(enemies[ind].aabb, enemies[i].aabb)) collision = true;
-}
+}   //Retorna true em caso de colisão
     return collision;
 }

@@ -1,6 +1,8 @@
 #ifndef _CONSTANTS_H
 #define _CONSTANTS_H
 
+//Abaixo definimos as constantes utilizadas no projeto
+
 #define SPHERE 0
 #define BUNNY  1
 #define FLOOR  2

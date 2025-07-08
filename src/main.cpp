@@ -1,3 +1,6 @@
+//Neste trabalho, utilizamos o Laboratório 4 como base para começar.
+
+
 //     Universidade Federal do Rio Grande do Sul
 //             Instituto de Informática
 //       Departamento de Informática Aplicada
@@ -225,6 +228,7 @@ bool z_pressed = false;
 bool shift_pressed = false; 
 bool space_pressed = false;
 
+//variáveis de controle de tamanho da tela
 int screen_width = 800;
 int screen_height = 600;
 int enemy_count = 3; // Número de inimigos na cena
@@ -364,10 +368,10 @@ int main(int argc, char* argv[])
     
     
 
-    
+    //variável para controlar a velocidade do sonic
     float speed = 10.0f;
     float shoot_time = -1.0f; // Timer para controlar o tempo entre disparos do projétil
-    float prev_time = (float)glfwGetTime();
+    float prev_time = (float)glfwGetTime(); //Variável para calcular o delta t
 
 
 
@@ -434,11 +438,12 @@ int main(int argc, char* argv[])
         float delta_t = current_time - prev_time;
         prev_time = current_time;
 
-
+        
         glm::vec4 sonic_position_anterior = sonic_position; // Salva posição antes de mover        
         animateObject(&sonic_position, camera_view_vector, speed, delta_t);
         WallsCollision(&sonic_position);
 
+        //altera o estilo de camera caso a tecla z seja pressionada
         if(!z_pressed)
         camera_position_c  = sonic_position + glm::vec4(x,y,z,0.0f);
         else camera_position_c = sonic_position + glm::vec4(0.0f,1.3f,0.0f,0.0f);
@@ -520,27 +525,10 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, SOUTH_WALL);
         DrawVirtualObject("the_south_wall");
 
-
+        //Chama a função que coloca todos os aneis na tela
         AnimateRings(all_rings,speed*5,delta_t, model);
-        
 
-
-        // Objetos transparentes/ Hit boxes ===========================================================
-
-        // // Desenhamos o modelo da hit box do coelho
-        // model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z);
-        // model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z);
-        // glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        // glUniform1i(g_object_id_uniform, HIT_BOX);
-        // DrawVirtualObject("the_cube");
-
-        // // Desenhamos o modelo da hit box da esfera
-        // model = Matrix_Translate(-3.0f,0.0f,0.0f);
-        // glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        // glUniform1i(g_object_id_uniform, HIT_BOX);
-        // DrawVirtualObject("the_cube");
-
-
+        //Calcula a AABB do sonic
         AABB sonic_aabb;
         sonic_aabb.min = glm::vec3(sonic_position.x - 1.0f, sonic_position.y - 1.0f, sonic_position.z - 1.0f);
         sonic_aabb.max = glm::vec3(sonic_position.x + 1.0f, sonic_position.y + 1.0f, sonic_position.z + 1.0f);
@@ -549,7 +537,7 @@ int main(int argc, char* argv[])
 
 
 
-        // Verifica colisão entre a hit box do coelho e a hit box da esfera
+        // Verifica colisão entre a hit box do sonic com a hitbox's de seus inimigos
         for (int i= 0 ; i < enemies.size(); i++)
         {
             if (ColisionAABB(sonic_aabb, enemies[i].aabb))
@@ -561,21 +549,25 @@ int main(int argc, char* argv[])
 
         AABB projec_aabb;
          if(space_pressed && !proj.shot && current_time - shoot_time >= 1.0f ) {
-            // Calcula a direção normalizada do coelho (para onde ele está olhando)
+            // Calcula a direção normalizada do sonic (para onde ele está olhando)
             glm::vec4 sonic_forward = glm::normalize(camera_view_vector);
 
-            // Define a posição inicial do projétil um pouco à frente do coelho
-            float offset = 1.5f; // ajuste conforme necessário
+            
+            float offset = 1.5f; 
+            // Define a posição inicial do projétil um pouco à frente e acima do sonic
             proj.position = sonic_position + sonic_forward * offset + glm::vec4(0.0f,0.5f,0.0f,1.0f);
 
-            // Define a direção do projétil igual à direção do coelho
+            // Define a direção do projétil igual à direção do sonic
             proj.direction = sonic_forward;
 
+            //ativa a flag que o projétil foi disparado
             proj.shot = true;
+            //atribui a varíavel shoot_time com o tempo do disparado para fazer uma verificação posteriormente
             shoot_time = current_time;
         }
 
         if (proj.shot){
+            //Caso o projétil tenha sido lançado, chama a função ProjectFired
             ProjectileFired(proj, speed, delta_t, shoot_time, current_time, enemies);
         } 
            
@@ -1278,9 +1270,8 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_Z)
     {
         if (action == GLFW_PRESS)
-            // Usuário apertou a tecla SPACE, então atualizamos o estado para pressionada
+            // Usuário apertou a tecla Z, então atualizamos o estado para pressionada
             z_pressed = !z_pressed;
-            g_LeftMouseButtonPressed = false; // Desabilita o botão esquerdo do mouse quando Z é pressionado
     }
     
     
@@ -1522,6 +1513,7 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     glm::vec4 left_dir = crossproduct(view, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
     left_dir = left_dir/norm(left_dir);
 
+    //variável para controlar a velocidade ao entrar no modo de corrida
     float current_speed = speed;
 
     if (shift_pressed){
@@ -1547,19 +1539,25 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
     
 }
 
+
+
+    //Função responsável por animar o projétil
 void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t)
 {
+    //Calcula o vetor view para direcionar o projétil durante a animação
     view = glm::vec4(view.x, 0.0f, view.z, 0.0f);
     view = view / norm(view);
 
+    //Calcula a velocidade do projétil
     float projectile_speed = speed * 3.0f;
 
-    // Move o objeto na direção da visão apenas uma vez por chamada
+    // Move o objeto na direção do vetor view
     *object_position += view * projectile_speed * delta_t;
 }
 
-
+ //Função para quando o projétil é disparado
 void ProjectileFired(Projectile &proj, float speed, float delta_t, float shoot_time, float current_time, std::vector<Robotnik> &enemies){
+    //Chama a função auxiliar de animação do projétil
     animateProjectile(&proj.position, proj.direction, speed, delta_t); 
     // Desenha o projétil
     glm::mat4 model = Matrix_Translate(proj.position.x, proj.position.y, proj.position.z)
@@ -1571,41 +1569,43 @@ void ProjectileFired(Projectile &proj, float speed, float delta_t, float shoot_t
     glUniform1i(g_object_id_uniform, PROJECTILE);
     DrawVirtualObject("the_projectile");
     proj.rotation += 0.004f;
-    
+    //Caso o projétil esteja solto há 1s ou tenha tido colisão com algum inimigo, ele desaparece
     if (current_time - shoot_time > 1.0f || ProjectileCollision(proj.position, 1.0f, enemies)) 
         proj.shot = false;
 }
 
-// set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
-// vim: set spell spelllang=pt_br :
 
 void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float speed, float delta_t, int ind) {
 
-    //Calcula a direção do robotnik ao sonic e depois normaliza para descobrir o angulo para aplicar na matriz de rotação
+    //Calcula a direção do robotnik ao sonic e depois normaliza para descobrir o angulo para aplicar na matriz de rotação -> robotnik está sempre de frente ao sonic
     glm::vec3 direction = glm::vec3(sonic_position.x - enemies[ind].position.x, 0.0f, sonic_position.z - enemies[ind].position.z);
     direction = glm::normalize(direction);
     enemies[ind].angle = atan2(direction.x, direction.z); // atan2(x, z) para rotação em Y
-
+    //Salva a posição antiga para caso haja colisão
     glm::vec4 old_pos = enemies[ind].position;
     // Atualiza a posição do robô com base na distância de Sonic
     if( sonic_position.x < enemies[ind].position.x - 3.0f) {
         enemies[ind].position.x -= speed * delta_t;
+        //Checa se há colisão com outro inimigo
         if(EnemyColission(enemies, ind)) {
             enemies[ind].position.x = old_pos.x; // Reseta a posição se colidir
         }
     } else if (sonic_position.x > enemies[ind].position.x + 3.0f) {
         enemies[ind].position.x += speed * delta_t;
+        //Checa se há colisão com outro inimigo
         if(EnemyColission(enemies, ind)) {
             enemies[ind].position.x = old_pos.x; // Reseta a posição se colidir
         }
     }
     if (sonic_position.z < enemies[ind].position.z - 3.0f) {
         enemies[ind].position.z -= speed * delta_t;
+        //Checa se há colisão com outro inimigo
         if(EnemyColission(enemies, ind)) {
             enemies[ind].position.x = old_pos.x; // Reseta a posição se colidir
         }
     } else if (sonic_position.z > enemies[ind].position.z + 3.0f) {
         enemies[ind].position.z += speed * delta_t;
+        //Checa se há colisão com outro inimigo
         if(EnemyColission(enemies, ind)) {
             enemies[ind].position.x = old_pos.x; // Reseta a posição se colidir
         }
@@ -1616,31 +1616,35 @@ void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float 
     
 }
 
+    //Função que modela os inimigos de acordo dos com valores da lista enemies
 void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 sonic_position, float speed, float delta_t) {
-
+        //Iteração para o número de inimigos
     for (int i = 0; i < enemies.size(); i++) {
+        //Checando se o inimigo ainda possui vidas
         if(enemies[i].health !=0){
-             ChaseSonic(enemies, sonic_position, speed/4, delta_t, i);
-        enemies[i].aabb.min = glm::vec3(enemies[i].position.x - 1.0f, 0.0f - 1.0f, enemies[i].position.z - 1.0f);
-        enemies[i].aabb.max = glm::vec3(enemies[i].position.x + 1.0f, 0.0f + 1.0f, enemies[i].position.z + 1.0f);
-        model = Matrix_Translate(enemies[i].position.x,-1.0f,enemies[i].position.z)
-              * Matrix_Rotate_Y(enemies[i].angle)
-              * Matrix_Rotate_X(-1.57079632679489661923)
-              * Matrix_Scale(0.02f,0.02f,0.02f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, ROBOTNIK);
-        DrawVirtualObject("ButtonLow3");
-        DrawVirtualObject("TeethTop");
-        DrawVirtualObject("HeadLow");
-        DrawVirtualObject("Mustache");
-        DrawVirtualObject("TeethBottom");
-        DrawVirtualObject("ButtonLow");
-        DrawVirtualObject("PantsLow");
-        DrawVirtualObject("ShirtLow");
-        DrawVirtualObject("GlassesLow3");
-        DrawVirtualObject("Hands");
-        DrawVirtualObject("ButtonLow1");
-        DrawVirtualObject("ButtonLow2");
+            //Chama função de movimentação
+            ChaseSonic(enemies, sonic_position, speed/4, delta_t, i);
+            //Instancia os valores da AABB e posteriormente coloca o modelo na tela
+            enemies[i].aabb.min = glm::vec3(enemies[i].position.x - 1.0f, 0.0f - 1.0f, enemies[i].position.z - 1.0f);
+            enemies[i].aabb.max = glm::vec3(enemies[i].position.x + 1.0f, 0.0f + 1.0f, enemies[i].position.z + 1.0f);
+            model = Matrix_Translate(enemies[i].position.x,-1.0f,enemies[i].position.z)
+                * Matrix_Rotate_Y(enemies[i].angle)
+                * Matrix_Rotate_X(-1.57079632679489661923)
+                * Matrix_Scale(0.02f,0.02f,0.02f);
+            glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(g_object_id_uniform, ROBOTNIK);
+            DrawVirtualObject("ButtonLow3");
+            DrawVirtualObject("TeethTop");
+            DrawVirtualObject("HeadLow");
+            DrawVirtualObject("Mustache");
+            DrawVirtualObject("TeethBottom");
+            DrawVirtualObject("ButtonLow");
+            DrawVirtualObject("PantsLow");
+            DrawVirtualObject("ShirtLow");
+            DrawVirtualObject("GlassesLow3");
+            DrawVirtualObject("Hands");
+            DrawVirtualObject("ButtonLow1");
+            DrawVirtualObject("ButtonLow2");
         }
         else{
             EraseEnemy(enemies[i]);
@@ -1649,8 +1653,8 @@ void ModelEnemies(std::vector<Robotnik> &enemies, glm::mat4 model, glm::vec4 son
 
 }
 
+    //Função que define a posição dos inimigos
 void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count) {
-    // Define a posição inicial do robô
     float robot_x = -30.0f;
     float robot_z = -30.0f;
     for(int i = 0; i < enemy_count; i++) {
@@ -1662,17 +1666,17 @@ void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count) {
 }
 
 
- //Função feita pelo Gemini com algumas alterações minhas (IA)
+ //Função de animação utilizando pontos da curva de bezier
 void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm::mat4 &model) {
-   
+    //Itera sobre todos os aneis
     for (int i = 0; i < all_rings.size(); i++) {
         Rings &ring = all_rings[i];
 
+        //Este trecho tivemos ajuda do Gemini(IA), pois estávamos tendo dificuldades com a animação utilizando a curva de bezier
         float inc_index = speed * delta_t;
 
         ring.animation_ind += inc_index;
 
-    
         while (ring.animation_ind >= static_cast<float>(ring.curve_positions.size())) {
             ring.animation_ind -= static_cast<float>(ring.curve_positions.size());
         }
@@ -1680,7 +1684,7 @@ void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm
         
         ring.current_position = ring.curve_positions[static_cast<int>(ring.animation_ind)];
 
-        
+        //Utiliza uma variável o campo angle.rot do objeto ring para rotacionar o objeto e não deixá-lo estático
         model = Matrix_Translate(ring.current_position.x,10.0f,ring.current_position.z)
                 * Matrix_Scale(6.0f, 6.0f, 6.0f)
                 * Matrix_Rotate_Y(M_PI/2.0f + ring.angle_rot * 2.0f)
@@ -1689,11 +1693,13 @@ void AnimateRings(std::vector<Rings> &all_rings, float speed, float delta_t, glm
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PROJECTILE);
         DrawVirtualObject("the_projectile");
+        //altera o angulo de rotação a cada frame
         ring.angle_rot += 0.00025;
     }
     
 }
 
+//Função que move o inimigo para fora da área jogável
 void EraseEnemy(Robotnik &enemy){
     
     enemy.position = glm::vec4(100.0f, -1.0f, 100.0f, 1.0f); // Coloca o robô fora da tela
