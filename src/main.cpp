@@ -1579,33 +1579,28 @@ void ChaseSonic(std::vector<Robotnik> &enemies, glm::vec4 sonic_position, float 
     direction = glm::normalize(direction);
     enemies[ind].angle = atan2(direction.x, direction.z); // atan2(x, z) para rotação em Y
 
+    glm::vec4 old_pos = enemies[ind].position;
     // Atualiza a posição do robô com base na distância de Sonic
     if( sonic_position.x < enemies[ind].position.x - 3.0f) {
-        for(int i = 0; i < enemies.size(); i++) {
-            if (i != ind) {
-                if (glm::length(glm::vec3(enemies[i].position.x - enemies[ind].position.x, 0.0f, enemies[i].position.z - enemies[ind].position.z)) > 2.0f)  enemies[ind].position.x -= speed * delta_t;
-            }
+        enemies[ind].position.x -= speed * delta_t;
+        if(EnemyColission(enemies, ind)) {
+            enemies[ind].position.x = old_pos.x; // Reseta a posição se colidir
         }
-        
     } else if (sonic_position.x > enemies[ind].position.x + 3.0f) {
-        for(int i = 0; i < enemies.size(); i++) {
-            if (i != ind) {
-                if (glm::length(glm::vec3(enemies[i].position.x - enemies[ind].position.x, 0.0f, enemies[i].position.z - enemies[ind].position.z)) > 2.0f)  enemies[ind].position.x += speed * delta_t;
-            }
+        enemies[ind].position.x += speed * delta_t;
+        if(EnemyColission(enemies, ind)) {
+            enemies[ind].position.x = old_pos.x; // Reseta a posição se colidir
         }
     }
     if (sonic_position.z < enemies[ind].position.z - 3.0f) {
-        for(int i = 0; i < enemies.size(); i++) {
-            if (i != ind) {
-                if (glm::length(glm::vec3(enemies[i].position.x - enemies[ind].position.x, 0.0f, enemies[i].position.z - enemies[ind].position.z)) > 2.0f)  enemies[ind].position.z -= speed * delta_t;
-            }
+        enemies[ind].position.z -= speed * delta_t;
+        if(EnemyColission(enemies, ind)) {
+            enemies[ind].position.x = old_pos.x; // Reseta a posição se colidir
         }
-        
     } else if (sonic_position.z > enemies[ind].position.z + 3.0f) {
-        for(int i = 0; i < enemies.size(); i++) {
-            if (i != ind) {
-                if (glm::length(glm::vec3(enemies[i].position.x - enemies[ind].position.x, 0.0f, enemies[i].position.z - enemies[ind].position.z)) > 2.0f)  enemies[ind].position.z += speed * delta_t;
-            }
+        enemies[ind].position.z += speed * delta_t;
+        if(EnemyColission(enemies, ind)) {
+            enemies[ind].position.x = old_pos.x; // Reseta a posição se colidir
         }
     }
     
@@ -1661,4 +1656,5 @@ void DefineRobotniks(std::vector<Robotnik> &enemies, int enemy_count) {
         robot_z += 15.0f;
     }
 }
+
 

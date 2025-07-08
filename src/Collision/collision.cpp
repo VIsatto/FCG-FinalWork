@@ -55,3 +55,13 @@ bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_si
     }
     return false;
 }
+
+
+bool EnemyColission(std::vector<Robotnik> &enemies, int ind) {
+    bool collision = false;
+    for (int i = 0; i < enemies.size(); i++) {
+        if( i != ind && enemies[i].health != 0) 
+            if (ColisionAABB(enemies[ind].aabb, enemies[i].aabb)) collision = true;
+}
+    return collision;
+}
