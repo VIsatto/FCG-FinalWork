@@ -43,6 +43,7 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -88,7 +89,24 @@ void main()
     float U = 0.0;
     float V = 0.0;
 
-    if ( object_id == ROBOTNIK )
+    if ( object_id == SPHERE )
+    {
+        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
+
+        vec4 r = position_model - bbox_center;
+        float theta = atan(position_model.z, position_model.x);
+        float phi = asin(position_model.y/length(r));
+
+        U = (theta + M_PI)/ (2.0f*M_PI);
+        V = (phi + M_PI/2)/ M_PI;
+
+        Kd = texture(TextureImage3, vec2(U,V)).rgb;
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = 0.5 * Kd;
+        q = 1.0;
+        color.a = 1.0;
+    }
+    else if ( object_id == ROBOTNIK )
     {
         Kd = texture(TextureImage1, texcoords).rgb;
         Ks = vec3(0.0,0.0,0.0);

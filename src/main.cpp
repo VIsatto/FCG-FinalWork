@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/environment_model/environment.png"); // TextureImage3
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel("../../data/shape_model/sphere.obj");
+    ObjModel spheremodel("../../data/shape_model/sphere_invertida_normais.obj");
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
@@ -480,7 +480,7 @@ int main(int argc, char* argv[])
 
         // Desenhamos o modelo do robotnik
         ModelEnemies(enemies, model, sonic_position, speed, delta_t);
-        
+
         // Desenhamos o modelo do sonic
         model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
               * Matrix_Rotate_Y(g_CameraTheta-3.14159265358979323846f)
@@ -489,6 +489,12 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SONIC);
         DrawVirtualObject("Sonic:CHR_NML_SNC1");
+
+        model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
+                * Matrix_Scale(50.0f, 50.0f, 50.0f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, SPHERE);
+        DrawVirtualObject("the_sphere");
 
         //desenhamos chão e paredes
         model = Matrix_Translate(0.0f,-1.0f,0.0f)
@@ -681,6 +687,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUseProgram(0);
 }
 
