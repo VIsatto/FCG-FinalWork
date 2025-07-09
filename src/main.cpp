@@ -1554,7 +1554,6 @@ void animateObject(glm::vec4* object_position, glm::vec4 view, float speed, floa
 }
 
 
-
     //Função responsável por animar o projétil
 void animateProjectile(glm::vec4* object_position, glm::vec4 view, float speed, float delta_t)
 {

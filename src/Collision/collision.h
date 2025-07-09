@@ -12,5 +12,6 @@ bool ColisionAABB(const AABB& a, const AABB& b);
 bool WallsCollision(glm::vec4* obj_position, float obj_half_size = 1.0);
 bool ProjectileCollision(glm::vec4 projectile_position ,float projectile_half_size, std::vector<Robotnik> &enemies);
 bool EnemyColission(std::vector<Robotnik> &enemies, int ind);
+bool ColisionPointAABB(glm::vec4 pos, const AABB& a);
 
-#endif 
+#endif _COLISSION_H
