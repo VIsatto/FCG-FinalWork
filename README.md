@@ -1,4 +1,6 @@
 ![image](https://github.com/user-attachments/assets/9de95191-c3fe-4afe-bdf8-e709de7120fa)
+> Esta imagem foi gerada por IA
+
 # Sonic BoomBa: Batalha no Espaço 🚀
 
 > Este repositório contém o Trabalho Final da disciplina INF01047 (Fundamentos de Computação Gráfica) da UFRGS, desenvolvido por Eduardo Veiga Ferreira e Vicente Tolentino Isatto.
