@@ -311,9 +311,10 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/robotnik_model/RobotnikFinal_Color.png"); // TextureImage1
     LoadTextureImage("../../data/room_model/rocky_texture.jpg"); // TextureImage2
     LoadTextureImage("../../data/environment_model/environment.png"); // TextureImage3
+    LoadTextureImage("../../data/projectile_model/ring_texture.png"); // TextureImage4
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel("../../data/shape_model/sphere.obj");
+    ObjModel spheremodel("../../data/shape_model/sphere_invertida_normais.obj");
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
@@ -480,7 +481,7 @@ int main(int argc, char* argv[])
 
         // Desenhamos o modelo do robotnik
         ModelEnemies(enemies, model, sonic_position, speed, delta_t);
-        
+
         // Desenhamos o modelo do sonic
         model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
               * Matrix_Rotate_Y(g_CameraTheta-3.14159265358979323846f)
@@ -489,6 +490,12 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SONIC);
         DrawVirtualObject("Sonic:CHR_NML_SNC1");
+
+        model = Matrix_Translate(sonic_position.x, sonic_position.y, sonic_position.z)
+                * Matrix_Scale(80.0f, 80.0f, 80.0f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, SPHERE);
+        DrawVirtualObject("the_sphere");
 
         //desenhamos chão e paredes
         model = Matrix_Translate(0.0f,-1.0f,0.0f)
@@ -681,6 +688,8 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUseProgram(0);
 }
 
@@ -1566,7 +1575,7 @@ void ProjectileFired(Projectile &proj, float speed, float delta_t, float shoot_t
     animateProjectile(&proj.position, proj.direction, speed, delta_t); 
     // Desenha o projétil
     glm::mat4 model = Matrix_Translate(proj.position.x, proj.position.y, proj.position.z)
-                    * Matrix_Scale(0.5f, 0.5f, 0.5f)
+                    * Matrix_Scale(1.5f, 1.5f, 1.5f)
                     * Matrix_Rotate_Y(proj.rotation *2.0f)
                     * Matrix_Rotate_X(proj.rotation * 1.0f)
                     * Matrix_Rotate_Z(proj.rotation * 3.0f);
