@@ -13,6 +13,8 @@ in vec4 position_model;
 // Coordenadas de textura obtidas do arquivo OBJ (se existirem!)
 in vec2 texcoords;
 
+in vec4 cor_gouraud;
+
 // Matrizes computadas no código C++ e enviadas para a GPU
 uniform mat4 model;
 uniform mat4 view;
@@ -44,6 +46,7 @@ uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -144,7 +147,6 @@ void main()
         Ka = 0.5 * Kd;
         q = 1.0;
         color.a = 1.0;
-
     }
 
     else if ( object_id == EAST_WALL)
@@ -198,15 +200,6 @@ void main()
         color.a = 0.0;
 
     }
-
-    else if(object_id == PROJECTILE){
-        Kd = vec3(1.0, 1.0, 0.0);
-        Ks = vec3(0.1, 0.1, 0.1);
-        Ka = vec3(0.6,0.6,0.6);
-        q = 20.0;
-        color.a = 1.0;
-
-    }
     else // Objeto desconhecido = preto
     {
         Kd = vec3(0.0,0.0,0.0);
@@ -217,40 +210,45 @@ void main()
 
     }
 
-    // Espectro da fonte de iluminação
-    vec3 I = vec3(1.0,1.0,1.0); // PREENCH AQUI o espectro da fonte de luz
+    if(object_id!=PROJECTILE){
+        // Espectro da fonte de iluminação
+        vec3 I = vec3(1.0,1.0,1.0); // PREENCH AQUI o espectro da fonte de luz
 
-    // Espectro da luz ambiente
-    vec3 Ia = vec3(0.2, 0.2, 0.2); // PREENCHA AQUI o espectro da luz ambiente
+        // Espectro da luz ambiente
+        vec3 Ia = vec3(0.2, 0.2, 0.2); // PREENCHA AQUI o espectro da luz ambiente
 
-    // Termo difuso utilizando a lei dos cossenos de Lambert
-    vec3 lambert_diffuse_term = Kd*I*max(0, dot(n,l)); // PREENCHA AQUI o termo difuso de Lambert
+        // Termo difuso utilizando a lei dos cossenos de Lambert
+        vec3 lambert_diffuse_term = Kd*I*max(0, dot(n,l)); // PREENCHA AQUI o termo difuso de Lambert
 
-    // Termo ambiente
-    vec3 ambient_term = Ka*Ia; // PREENCHA AQUI o termo ambiente
+        // Termo ambiente
+        vec3 ambient_term = Ka*Ia; // PREENCHA AQUI o termo ambiente
 
-    // Termo especular utilizando o modelo de iluminação de Phong
-    vec3 phong_specular_term  = Ks*I* pow(max(0, dot(r,v)), q); // PREENCH AQUI o termo especular de Phong
+        // Termo especular utilizando o modelo de iluminação de Phong
+        vec3 phong_specular_term  = Ks*I* pow(max(0, dot(r,v)), q); // PREENCH AQUI o termo especular de Phong
 
-    // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
-    // necessário:
-    // 1) Habilitar a operação de "blending" de OpenGL logo antes de realizar o
-    //    desenho dos objetos transparentes, com os comandos abaixo no código C++:
-    //      glEnable(GL_BLEND);
-    //      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // 2) Realizar o desenho de todos objetos transparentes *após* ter desenhado
-    //    todos os objetos opacos; e
-    // 3) Realizar o desenho de objetos transparentes ordenados de acordo com
-    //    suas distâncias para a câmera (desenhando primeiro objetos
-    //    transparentes que estão mais longe da câmera).
-    // Alpha default = 1 = 100% opaco = 0% transparente
+        // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
+        // necessário:
+        // 1) Habilitar a operação de "blending" de OpenGL logo antes de realizar o
+        //    desenho dos objetos transparentes, com os comandos abaixo no código C++:
+        //      glEnable(GL_BLEND);
+        //      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // 2) Realizar o desenho de todos objetos transparentes *após* ter desenhado
+        //    todos os objetos opacos; e
+        // 3) Realizar o desenho de objetos transparentes ordenados de acordo com
+        //    suas distâncias para a câmera (desenhando primeiro objetos
+        //    transparentes que estão mais longe da câmera).
+        // Alpha default = 1 = 100% opaco = 0% transparente
 
-    // Cor final do fragmento calculada com uma combinação dos termos difuso,
-    // especular, e ambiente. Veja slide 129 do documento Aula_17_e_18_Modelos_de_Iluminacao.pdf.
-    color.rgb = lambert_diffuse_term + ambient_term + phong_specular_term;
+        // Cor final do fragmento calculada com uma combinação dos termos difuso,
+        // especular, e ambiente. Veja slide 129 do documento Aula_17_e_18_Modelos_de_Iluminacao.pdf.
+        color.rgb = lambert_diffuse_term + ambient_term + phong_specular_term;
 
-    // Cor final com correção gamma, considerando monitor sRGB.
-    // Veja https://en.wikipedia.org/w/index.php?title=Gamma_correction&oldid=751281772#Windows.2C_Mac.2C_sRGB_and_TV.2Fvideo_standard_gammas
-    color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
+        // Cor final com correção gamma, considerando monitor sRGB.
+        // Veja https://en.wikipedia.org/w/index.php?title=Gamma_correction&oldid=751281772#Windows.2C_Mac.2C_sRGB_and_TV.2Fvideo_standard_gammas
+        color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
+    }
+    else{
+        color = cor_gouraud;
+    }
 } 
 
